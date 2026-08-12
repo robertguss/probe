@@ -1,0 +1,8 @@
+hostname=dev-box
+os=Ubuntu 24.04.4 LTS
+kernel=Linux 6.8.0-134-generic x86_64
+arch=x86_64
+go version go1.26.5 linux/amd64
+git version 2.43.0
+module=github.com/robertguss/go-foundry-cli
+2026-07-31T04:01:31Z

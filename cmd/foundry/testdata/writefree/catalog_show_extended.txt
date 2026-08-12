@@ -1,0 +1,46 @@
+# Write-free e2e: catalog show extended coverage (tui, distribution, empty
+# id, unknown id) — bead go-foundry-cli-wet.2.4. Base coverage (core, cli,
+# unknown) lives in catalog.txt.
+
+# show tui archetype.
+exec foundry catalog show tui
+stdout 'id=tui'
+stdout 'kind=archetype'
+stdout 'catalog_digest='
+! stderr .
+
+exec foundry catalog show tui --output json
+stdout '"ok":true'
+stdout '"id":"tui"'
+stdout '"kind":"archetype"'
+stdout '"catalog_digest"'
+! stderr .
+
+# show distribution profile.
+exec foundry catalog show distribution
+stdout 'id=distribution'
+stdout 'kind=profile'
+stdout 'catalog_digest='
+! stderr .
+
+exec foundry catalog show distribution --output json
+stdout '"ok":true'
+stdout '"id":"distribution"'
+stdout '"kind":"profile"'
+stdout '"catalog_digest"'
+! stderr .
+
+# Missing id (no positional arg) — cobra ExactArgs(1) usage error.
+! exec foundry catalog show
+stderr 'usage.invalid|accepts 1 arg'
+
+# Empty-string id — one positional arg, but empty; fails closed as an
+# unknown/invalid unit, never a silent match (exact-ids-only, no fuzzy).
+! exec foundry catalog show ''
+assert_error_id stderr catalog.invalid
+stderr 'available units'
+
+! exec foundry catalog show '' --output json
+assert_error_id stdout catalog.invalid
+stdout '"ok":false'
+! stderr .

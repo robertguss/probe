@@ -1,0 +1,18 @@
+module github.com/example/foundry-smoke-cli
+
+go 1.26.0
+
+toolchain go1.26.5
+
+require (
+	github.com/google/go-cmp v0.7.0
+	github.com/rogpeppe/go-internal v1.15.0
+	github.com/spf13/cobra v1.10.2
+	golang.org/x/vuln v1.6.0
+	honnef.co/go/tools v0.7.0
+)
+
+tool (
+	golang.org/x/vuln/cmd/govulncheck
+	honnef.co/go/tools/cmd/staticcheck
+)

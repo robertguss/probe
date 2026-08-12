@@ -1,0 +1,9 @@
+# Expected error id: (none — hostile plain-data success path)
+# expression-like text in description is plain data (no expression language).
+schema = 1
+name = "expr-like"
+module = "github.com/example/expr-like"
+description = "expression-like: 1+1 == 2 and ${{ github.event }} as plain text"
+archetype = "cli"
+destination = "./expr-like"
+profiles = []

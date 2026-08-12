@@ -1,0 +1,18 @@
+=== RUN   TestE5VersionActionLock
+    lock_test.go:18: E5PROBE step=locate outcome=pass path=/home/rob/projects/go-foundry-cli/catalog/versions.toml
+    lock_test.go:24: E5PROBE step=parse outcome=pass schema=1 go=1.26.5 modules=9 tools=4 actions=8
+    lock_test.go:33: E5PROBE step=unique_ids outcome=pass
+    lock_test.go:41: E5PROBE step=section12 outcome=pass pins=14
+    lock_test.go:49: E5PROBE step=actions outcome=pass actions=8 required=8
+    lock_test.go:68: E5PROBE step=single_lock outcome=pass file=catalog/versions.toml
+E5SUMMARY ok=true go=1.26.5 modules=9 tools=4 actions=8 ts=2026-07-30T20:47:04Z
+--- PASS: TestE5VersionActionLock (0.00s)
+=== RUN   TestE5StaticcheckReleaseAlias
+    lock_test.go:89: E5PROBE step=staticcheck_alias outcome=pass
+--- PASS: TestE5StaticcheckReleaseAlias (0.00s)
+=== RUN   TestE5CVEGoPinDocumented
+    lock_test.go:104: E5PROBE step=cve_doc outcome=pass
+--- PASS: TestE5CVEGoPinDocumented (0.00s)
+PASS
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e5	0.008s
+EXIT:0

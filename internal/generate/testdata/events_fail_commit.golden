@@ -1,0 +1,6 @@
+progress|parent-reobserve|git-initialized|
+state||committing||transition
+progress|commit|committing|
+state||failed-preserved||commit
+terminal||failed-preserved|failed-preserved|terminal|stage_path=.foundry-demo-deadbeef
+progress|report|failed-preserved|

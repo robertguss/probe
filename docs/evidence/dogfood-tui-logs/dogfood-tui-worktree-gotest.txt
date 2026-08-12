@@ -1,0 +1,3 @@
+?   	github.com/robertguss/worktree-status/cmd/worktree-status	[no test files]
+ok  	github.com/robertguss/worktree-status/internal/tui	0.006s
+ok  	github.com/robertguss/worktree-status/internal/version	0.005s

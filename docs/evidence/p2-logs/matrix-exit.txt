@@ -1,0 +1,58 @@
+=== RUN   TestPerfBaselineSchema
+    perf_baseline_test.go:16: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=1 elapsed_ms=0 level=PHASE name=arrange outcome=start
+    perf_baseline_test.go:17: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=2 elapsed_ms=0 level=FIXTURE name=perf_dir outcome=ok detail=docs/evidence/perf
+    perf_baseline_test.go:18: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=3 elapsed_ms=0 level=FIXTURE name=latest outcome=ok detail=docs/evidence/perf/baselines-latest.json
+    perf_baseline_test.go:19: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=4 elapsed_ms=0 level=FIXTURE name=schema outcome=ok detail=docs/evidence/perf/schema.json
+    perf_baseline_test.go:20: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=5 elapsed_ms=0 level=FIXTURE name=summary outcome=ok detail=docs/evidence/perf/summary.md
+    perf_baseline_test.go:21: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=6 elapsed_ms=0 level=FIXTURE name=p28_citation outcome=ok detail=docs/evidence/perf/P2.8-citation.md
+    perf_baseline_test.go:22: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=7 elapsed_ms=0 level=PHASE name=arrange outcome=ok detail=end
+    perf_baseline_test.go:24: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=8 elapsed_ms=0 level=PHASE name=check outcome=start
+    perf_baseline_test.go:26: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=9 elapsed_ms=3 level=STEP name=inputs outcome=info detail=findings=0
+    perf_baseline_test.go:32: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=10 elapsed_ms=3 level=ASSERT name=schema_clean outcome=ok expected="0" actual="0"
+    perf_baseline_test.go:33: STEPLOG package=internal/archtest_test test=TestPerfBaselineSchema idx=11 elapsed_ms=3 level=PHASE name=check outcome=ok detail=end
+--- PASS: TestPerfBaselineSchema (0.00s)
+=== RUN   TestReqTraceabilityCompleteness
+    reqtrace_test.go:20: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=1 elapsed_ms=0 level=PHASE name=load outcome=start
+    reqtrace_test.go:21: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=2 elapsed_ms=0 level=FIXTURE name=matrix_json outcome=ok detail=docs/evidence/req-traceability.json
+    reqtrace_test.go:22: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=3 elapsed_ms=0 level=FIXTURE name=matrix_md outcome=ok detail=docs/evidence/req-traceability.md
+    reqtrace_test.go:23: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=4 elapsed_ms=0 level=FIXTURE name=spec outcome=ok detail=docs/02-definitive-foundry-specification-revised-fable-5.md
+    reqtrace_test.go:24: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=5 elapsed_ms=0 level=PHASE name=load outcome=ok detail=end
+    reqtrace_test.go:26: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=6 elapsed_ms=0 level=PHASE name=check outcome=start
+    reqtrace_test.go:36: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=7 elapsed_ms=16 level=STEP name=inputs outcome=info detail=spec_count=125 matrix_count=125 missing=0 extra=0 duplicates=0 tbd=0 orphans=0
+    reqtrace_test.go:46: 
+        req-traceability: spec=125 matrix=125 ok=true
+        
+    reqtrace_test.go:51: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=8 elapsed_ms=17 level=ASSERT name=ok outcome=ok expected="true" actual="true"
+    reqtrace_test.go:52: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=9 elapsed_ms=17 level=ASSERT name=exactly_125_spec outcome=ok expected="125" actual="125"
+    reqtrace_test.go:53: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=10 elapsed_ms=17 level=ASSERT name=exactly_125_matrix outcome=ok expected="125" actual="125"
+    reqtrace_test.go:54: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=11 elapsed_ms=17 level=ASSERT name=no_missing outcome=ok expected="0" actual="0"
+    reqtrace_test.go:55: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=12 elapsed_ms=17 level=ASSERT name=no_extra outcome=ok expected="0" actual="0"
+    reqtrace_test.go:56: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=13 elapsed_ms=17 level=ASSERT name=no_tbd outcome=ok expected="0" actual="0"
+    reqtrace_test.go:60: STEPLOG package=internal/archtest_test test=TestReqTraceabilityCompleteness idx=14 elapsed_ms=17 level=PHASE name=check outcome=ok detail=end
+--- PASS: TestReqTraceabilityCompleteness (0.02s)
+=== RUN   TestReqTraceabilityMarkdownTwin
+    reqtrace_test.go:67: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=1 elapsed_ms=0 level=PHASE name=assert_md outcome=start
+    reqtrace_test.go:83: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=2 elapsed_ms=6 level=ASSERT name=md_has_all_reqs outcome=ok expected="0" actual="0"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=3 elapsed_ms=7 level=ASSERT name=md_has_go_foundry_cli_dlv.1 outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=4 elapsed_ms=7 level=ASSERT name=md_has_go_foundry_cli_0z4 outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=5 elapsed_ms=7 level=ASSERT name=md_has_go_foundry_cli_5pr outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=6 elapsed_ms=7 level=ASSERT name=md_has_go_foundry_cli_66w outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=7 elapsed_ms=7 level=ASSERT name=md_has_go_foundry_cli_7fm outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=8 elapsed_ms=7 level=ASSERT name=md_has_FOUNDRY_MATRIX_PHASE_EXIT outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=9 elapsed_ms=7 level=ASSERT name=md_has_planned outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=10 elapsed_ms=7 level=ASSERT name=md_has_implemented outcome=ok expected="true" actual="true"
+    reqtrace_test.go:100: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=11 elapsed_ms=7 level=ASSERT name=md_has_verified outcome=ok expected="true" actual="true"
+    reqtrace_test.go:102: STEPLOG package=internal/archtest_test test=TestReqTraceabilityMarkdownTwin idx=12 elapsed_ms=7 level=PHASE name=assert_md outcome=ok detail=end
+--- PASS: TestReqTraceabilityMarkdownTwin (0.01s)
+=== RUN   TestReqTraceabilityPhaseExit
+    reqtrace_test.go:116: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=1 elapsed_ms=0 level=PHASE name=phase_exit outcome=start
+    reqtrace_test.go:117: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=2 elapsed_ms=0 level=STEP name=inputs outcome=info detail=strict_paths=1 phase_exit=P2
+    reqtrace_test.go:130: 
+        req-traceability: spec=125 matrix=125 ok=true
+        
+    reqtrace_test.go:145: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=3 elapsed_ms=17 level=ASSERT name=no_unverified outcome=ok expected="0" actual="0"
+    reqtrace_test.go:147: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=4 elapsed_ms=17 level=ASSERT name=no_missing_paths outcome=ok expected="0" actual="0"
+    reqtrace_test.go:155: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=5 elapsed_ms=17 level=PHASE name=phase_exit outcome=ok detail=end
+--- PASS: TestReqTraceabilityPhaseExit (0.02s)
+PASS
+ok  	github.com/robertguss/go-foundry-cli/internal/archtest	0.058s

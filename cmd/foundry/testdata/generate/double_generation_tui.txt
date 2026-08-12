@@ -1,0 +1,30 @@
+# Generate e2e — TUI double-generation plan_sha256 equality (REQ-010 / hrc).
+
+mkdir $GEN_ROOT/dbl-tui
+chmod 0700 $GEN_ROOT/dbl-tui
+
+cp fixtures/smoke-tui-nogit.toml tui-nogit.toml
+
+exec foundry plan --spec tui-nogit.toml --dest $GEN_ROOT/dbl-tui/foundry-smoke-tui --output json
+stdout '"ok":true'
+cp stdout plan_a.json
+dump_digest plan_a.json
+
+exec foundry generate --spec tui-nogit.toml --dest $GEN_ROOT/dbl-tui/foundry-smoke-tui --output json
+stdout '"ok":true'
+stdout '"committed"'
+cp stdout gen_a.json
+assert_plan_sha256_eq plan_a.json gen_a.json
+exists $GEN_ROOT/dbl-tui/foundry-smoke-tui/internal/tui/app.go
+
+rm -rf $GEN_ROOT/dbl-tui/foundry-smoke-tui
+
+exec foundry plan --spec tui-nogit.toml --dest $GEN_ROOT/dbl-tui/foundry-smoke-tui --output json
+cp stdout plan_b.json
+
+exec foundry generate --spec tui-nogit.toml --dest $GEN_ROOT/dbl-tui/foundry-smoke-tui --output json
+stdout '"ok":true'
+cp stdout gen_b.json
+assert_plan_sha256_eq plan_b.json gen_b.json
+assert_plan_sha256_eq plan_a.json plan_b.json
+assert_plan_sha256_eq gen_a.json gen_b.json

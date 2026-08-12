@@ -1,0 +1,28 @@
+date_utc=2026-07-30T20:44:58Z
+--- GitHub Action tag -> full commit SHA ---
+OK   actions/checkout@v5.1.0 -> fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+OK   actions/setup-go@v6.5.0 -> 924ae3a1cded613372ab5595356fb5720e22ba16
+OK   actions/upload-artifact@v5.0.0 -> 330a01c490aca151604b8cf639adc76d48f6c5d4
+OK   actions/download-artifact@v5.0.0 -> 634f93cb2916e3fdff6788551b99b062d0335ce0
+OK   actions/dependency-review-action@v4.9.0 -> 2031cfc080254a8a887f58cffee85186f0e49e48
+OK   actions/attest-build-provenance@v3.2.0 -> 96278af6caaf10aea03fd8d33a09a777ca52d62f
+OK   goreleaser/goreleaser-action@v6.4.0 -> e435ccd777264be153ace6237001ef4d979d3a7a
+OK   anchore/sbom-action@v0.20.11 -> 43a17d6e7add2b5535efe4dcae9952337c479a93
+--- Tool releases (non-module) ---
+OK   golang/go@go1.26.5 -> c19862e5f8415b4f24b189d065ed739517c548ba
+OK   goreleaser/goreleaser@v2.17.1 -> 83f4c19a5c5c0b9efef6bf2aedc6805bbcb9dfe2
+OK   anchore/syft@v1.44.0 -> 8cb78ce40ced6a731fb83f2a491a67444f541bf1
+OK   dominikh/go-tools@2026.1 -> ff63afafc529279f454e02f1d060210bd4263951
+--- Syft latest tags (info) ---
+  v1.50.0 commit=16223e6dd7893fe578787658ceb876257483d404
+  v1.49.0 commit=29fd7d0dec81cf03e0a1194a1985c7c893bb2396
+  v1.48.0 commit=3e2bc6ed095f7ec1a415fb38cfe1c319e95dfed6
+  v1.47.0 commit=5e11775c8b76bd6cedc53e3c60cc02544575f0d5
+  v1.46.0 commit=b15c5dbfe2bb21c9d73002c1056a829c8c411c75
+--- Go 1.26.5 release notes presence ---
+HTTP/2 302 
+content-type: text/html; charset=utf-8
+location: https://dl.google.com/go/go1.26.5.linux-amd64.tar.gz
+HTTP/2 200 
+content-type: application/x-gzip
+content-length: 66879095

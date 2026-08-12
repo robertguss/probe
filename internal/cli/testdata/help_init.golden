@@ -1,0 +1,36 @@
+init writes one Project Specification TOML to --out. It does not discover a
+default path, does not prompt, and does not generate a project. Destination
+must not already exist (no overwrite).
+
+Required: --out, --name, --module. Optional: --archetype (cli|tui, default cli),
+--description, --destination (default ./<name>), --visibility (private|public),
+--profile (repeatable; only "distribution" is selectable today).
+
+The written file is validated with the same field contract as validate before
+it is written. Next step: foundry validate --spec <out> && foundry plan …
+
+Examples:
+  foundry init --out ./my-cli.toml --name my-cli --module github.com/you/my-cli
+  foundry init --out ./app.toml --name app --module github.com/you/app --archetype tui
+  foundry init --out ./pub.toml --name pub --module github.com/you/pub \
+    --visibility public --profile distribution
+
+Usage:
+  foundry init [flags]
+
+Flags:
+      --archetype string      archetype: cli|tui (default "cli")
+      --description string    one-line description (default: derived from name)
+      --destination string    generate destination (default: ./<name>)
+  -h, --help                  help for init
+      --module string         Go module path (final segment must equal name; required)
+      --name string           project name (kebab-case; required)
+      --out string            path to write the Project Spec TOML (required; must not exist)
+      --profile stringArray   optional profile id (repeatable; distribution only today)
+      --visibility string     visibility: private|public (default "private")
+
+Global Flags:
+      --color string    color mode: auto|always|never (text mode only) (default "auto")
+      --output string   output mode: text|json (default "text")
+      --quiet           suppress non-essential human output (text mode only)
+      --verbose         diagnostic detail on stderr (text mode only)

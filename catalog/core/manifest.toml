@@ -1,0 +1,83 @@
+# Core catalog unit — files present in every Generated Project (Section 16.2/16.6).
+# REQ-009, REQ-060–063. Zero third-party runtime deps; go-cmp test-only (12.2).
+# go.mod is typed (not a [[files]] entry); go.sum is produced by go mod tidy.
+schema = 1
+id = "core"
+kind = "core"
+description = "Core toolchain, module layout, docs, CI, Dependabot, and AGENTS for every Generated Project"
+
+# --- .github/ (CI + Dependabot; Section 16.6) ---
+[[files]]
+path = ".github/dependabot.yml"
+render = "static"
+source = "files/dependabot.yml.static"
+mode = "0644"
+
+[[files]]
+path = ".github/workflows/ci.yml"
+render = "template"
+source = "files/workflows/ci.yml.tmpl"
+mode = "0644"
+
+[[files]]
+path = ".github/workflows/strict.yml"
+render = "template"
+source = "files/workflows/strict.yml.tmpl"
+mode = "0644"
+
+# --- root docs and ignore ---
+[[files]]
+path = ".gitignore"
+render = "static"
+source = "files/gitignore.static"
+mode = "0644"
+
+[[files]]
+path = "AGENTS.md"
+render = "template"
+source = "files/AGENTS.md.tmpl"
+mode = "0644"
+
+[[files]]
+path = "README.md"
+render = "template"
+source = "files/README.md.tmpl"
+mode = "0644"
+
+# --- docs/ (Section 16.3 ownership) ---
+[[files]]
+path = "docs/architecture.md"
+render = "template"
+source = "files/docs/architecture.md.tmpl"
+mode = "0644"
+
+[[files]]
+path = "docs/commands.md"
+render = "template"
+source = "files/docs/commands.md.tmpl"
+mode = "0644"
+
+[[files]]
+path = "docs/testing.md"
+render = "template"
+source = "files/docs/testing.md.tmpl"
+mode = "0644"
+
+# --- internal/version/ (build identity; Section 16.2) ---
+[[files]]
+path = "internal/version/version.go"
+render = "static"
+source = "files/internal/version/version.go.static"
+mode = "0644"
+
+[[files]]
+path = "internal/version/version_test.go"
+render = "static"
+source = "files/internal/version/version_test.go.static"
+mode = "0644"
+
+# --- test-only dependency (Section 12.2); no runtime third-party deps ---
+[[dependencies]]
+module = "github.com/google/go-cmp"
+version = "v0.7.0"
+scope = "test"

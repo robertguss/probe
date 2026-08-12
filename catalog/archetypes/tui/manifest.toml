@@ -1,0 +1,93 @@
+# TUI archetype — Bubble Tea application (Section 18.2, REQ-068–072).
+# Minimal working shell: static help/quit screen, single lifecycle owner.
+# No synthetic async init demos; no effects.go/messages.go (FND-014 / §18.2).
+# Core files live in core/ (P2.6.b). ui-architecture.md is archetype-owned.
+schema = 1
+id = "tui"
+kind = "archetype"
+description = "Conventional TUI project archetype (Bubble Tea stack)"
+
+# --- cmd/<binary>/ ---
+[[files]]
+path = "cmd/{{binary}}/main.go"
+render = "template"
+source = "files/main.go.tmpl"
+mode = "0644"
+
+# --- docs/ (TUI-owned; Core owns architecture/commands/testing) ---
+[[files]]
+path = "docs/ui-architecture.md"
+render = "template"
+source = "files/docs/ui-architecture.md.tmpl"
+mode = "0644"
+
+# --- internal/tui/ (Section 18.2 explicit file responsibilities) ---
+[[files]]
+path = "internal/tui/app.go"
+render = "template"
+source = "files/internal/tui/app.go.tmpl"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/state.go"
+render = "template"
+source = "files/internal/tui/state.go.tmpl"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/update.go"
+render = "static"
+source = "files/internal/tui/update.go.static"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/update_test.go"
+render = "template"
+source = "files/internal/tui/update_test.go.tmpl"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/view.go"
+render = "static"
+source = "files/internal/tui/view.go.static"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/view_test.go"
+render = "template"
+source = "files/internal/tui/view_test.go.tmpl"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/keymap.go"
+render = "static"
+source = "files/internal/tui/keymap.go.static"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/theme.go"
+render = "static"
+source = "files/internal/tui/theme.go.static"
+mode = "0644"
+
+[[files]]
+path = "internal/tui/lifecycle_test.go"
+render = "static"
+source = "files/internal/tui/lifecycle_test.go.static"
+mode = "0644"
+
+# --- dependencies (lock-pinned via catalog/versions.toml; Section 12.4) ---
+[[dependencies]]
+module = "charm.land/bubbletea/v2"
+version = "v2.0.8"
+scope = "runtime"
+
+[[dependencies]]
+module = "charm.land/bubbles/v2"
+version = "v2.1.1"
+scope = "runtime"
+
+[[dependencies]]
+module = "charm.land/lipgloss/v2"
+version = "v2.0.5"
+scope = "runtime"

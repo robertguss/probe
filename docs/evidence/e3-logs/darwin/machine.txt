@@ -1,0 +1,24 @@
+date: 2026-07-31T11:21:20Z
+hostname: sjc22-bm206-4a1984be-1377-4600-8f28-b8fe627e00d4-4ED8784033BD.local
+uname: Darwin sjc22-bm206-4a1984be-1377-4600-8f28-b8fe627e00d4-4ED8784033BD.local 25.4.0 Darwin Kernel Version 25.4.0: Thu Mar 19 19:29:33 PDT 2026; root:xnu-12377.101.15~1/RELEASE_ARM64_VMAPPLE arm64
+sw_vers:
+  ProductName:		macOS
+  ProductVersion:		26.4
+  BuildVersion:		25E246
+go: go version go1.26.5 darwin/arm64
+GOTOOLCHAIN=local
+GOOS/GOARCH: darwin/arm64
+default CGO_ENABLED: 1
+default CC: clang
+preflight_compiler_order: clang gcc cc (darwin)
+first_cc_on_path: clang -> /usr/bin/clang
+cc_version:
+  Apple clang version 21.0.0 (clang-2100.1.1.101)
+  Target: arm64-apple-darwin25.4.0
+  Thread model: posix
+xcode-select -p: /Applications/Xcode_26.5.app/Contents/Developer
+which clang gcc cc:
+  /usr/bin/clang
+  /usr/bin/gcc
+  /usr/bin/cc
+FOUNDRY_KNOWN_RACE note: parent e3 tests arm knownrace with FOUNDRY_KNOWN_RACE=1

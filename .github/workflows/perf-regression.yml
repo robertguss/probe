@@ -1,0 +1,92 @@
+# Performance regression gate for Section 49 warm baselines (bead go-foundry-cli-wet.5.3).
+#
+# Downloads the latest `perf-baselines` artifact from the main branch, re-runs
+# the capture with --quick, and fails when `warm_host_cache` p50_ms regresses by
+# more than FOUNDRY_PERF_REGRESSION_THRESHOLD. Cold-run data is kept as evidence
+# only and does not gate the build.
+
+name: perf-regression
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Cancel superseded runs of the same ref.
+concurrency:
+  group: foundry-perf-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  perf:
+    name: perf-regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+      MACHINE_CLASS: ci-github
+      FOUNDRY_PERF_OUT: ${{ github.workspace }}/artifacts/perf
+      FOUNDRY_PERF_REGRESSION_THRESHOLD: "0.10"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0 — toolchain from go.mod (1.26.5)
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download latest main baseline artifact
+        # dawidd6/action-download-artifact v8.0.0
+        uses: dawidd6/action-download-artifact@20319c5641d495c8a52e688b7dc5fada6c3a9fbc # v8
+        with:
+          workflow: perf-baselines.yml
+          branch: main
+          name: perf-baselines
+          path: baseline/
+          if_no_artifact_found: warn
+
+      - name: Prepare output directory
+        run: mkdir -p "$FOUNDRY_PERF_OUT"
+
+      - name: Capture current baselines
+        run: |
+          set -euo pipefail
+          ./scripts/perf/capture-baselines.sh --quick
+
+      - name: Compare warm baseline
+        run: |
+          set -uo pipefail
+          baseline="$(find baseline -maxdepth 2 -name 'baselines-*.json' -print -quit)"
+          if [[ -z "$baseline" ]]; then
+            baseline="baseline/baselines-latest.json"
+          fi
+          current="$FOUNDRY_PERF_OUT/baselines-latest.json"
+          if [[ ! -f "$baseline" ]]; then
+            echo "warn: no baseline artifact found; treating as evidence-only"
+            exit 0
+          fi
+          python3 scripts/perf/compare-perf-baseline.py "$baseline" "$current" | tee "$FOUNDRY_PERF_OUT/regression-report.txt"
+
+      - name: Upload perf regression artifacts
+        if: always()
+        # actions/upload-artifact v5.0.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: perf-regression-report
+          path: artifacts/perf/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Performance regression summary
+        if: always()
+        run: |
+          echo '## Performance regression artifacts' >> "$GITHUB_STEP_SUMMARY"
+          echo '- artifacts/perf/ (uploaded as perf-regression-report)' >> "$GITHUB_STEP_SUMMARY"

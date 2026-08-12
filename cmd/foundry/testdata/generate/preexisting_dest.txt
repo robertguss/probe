@@ -1,0 +1,14 @@
+# Generate e2e — pre-existing destination → exit 2, fs.destination_exists.
+
+mkdir $GEN_ROOT/parent-exist
+chmod 0700 $GEN_ROOT/parent-exist
+
+exec foundry generate --spec examples/minimal-cli.toml --dest $GEN_ROOT/parent-exist/minimal-cli --output json
+stdout '"ok":true'
+stdout '"committed"'
+
+! exec foundry generate --spec examples/minimal-cli.toml --dest $GEN_ROOT/parent-exist/minimal-cli --output json
+stdout '"ok":false'
+stdout 'fs.destination_exists'
+assert_error_id stdout fs.destination_exists
+exists $GEN_ROOT/parent-exist/minimal-cli/go.mod

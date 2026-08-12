@@ -1,0 +1,1 @@
+ok  	github.com/example/foundry-smoke-tui/internal/tui	0.005s

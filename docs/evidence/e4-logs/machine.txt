@@ -1,0 +1,10 @@
+hostname=dev-box
+date=2026-07-30T20:34:54Z
+uname=Linux dev-box 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+os=Ubuntu 24.04.4 LTS
+go=go version go1.26.5 linux/amd64
+bubbletea=charm.land/bubbletea/v2 v2.0.8
+creack_pty=github.com/creack/pty v1.1.24
+x_sys=golang.org/x/sys v0.46.0
+arch=amd64
+os_go=linux

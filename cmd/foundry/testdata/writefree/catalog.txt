@@ -1,0 +1,57 @@
+# Write-free e2e: catalog list / show (embedded metadata only).
+
+# list text — sorted unit ids from embed.
+exec foundry catalog list
+stdout '^cli\tarchetype\t'
+stdout '^core\tcore\t'
+stdout '^distribution\tprofile\t'
+stdout '^tui\tarchetype\t'
+! stderr .
+dump_digest stdout
+
+# list JSON — digest + units schema.
+exec foundry catalog list --output json
+stdout '"schema":1'
+stdout '"command":"catalog list"'
+stdout '"ok":true'
+stdout '"catalog_digest"'
+stdout '"units"'
+stdout '"id":"cli"'
+stdout '"id":"core"'
+! stderr .
+dump_digest stdout
+
+# show core (hit)
+exec foundry catalog show core
+stdout 'id=core'
+stdout 'kind=core'
+stdout 'catalog_digest='
+! stderr .
+
+# show cli archetype
+exec foundry catalog show cli
+stdout 'id=cli'
+stdout 'kind=archetype'
+! stderr .
+
+# show JSON includes digest matching version catalog field shape.
+exec foundry catalog show core --output json
+stdout '"ok":true'
+stdout '"catalog_digest"'
+stdout '"id":"core"'
+! stderr .
+
+# unknown id → catalog.invalid + available set (exact IDs only).
+! exec foundry catalog show does-not-exist-unit
+stderr 'catalog.invalid'
+stderr 'available units'
+stderr 'cli'
+stderr 'core'
+assert_error_id stderr catalog.invalid
+
+# JSON unknown
+! exec foundry catalog show does-not-exist-unit --output json
+stdout 'catalog.invalid'
+stdout '"ok":false'
+! stderr .
+assert_error_id stdout catalog.invalid

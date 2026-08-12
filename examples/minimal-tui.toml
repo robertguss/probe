@@ -1,0 +1,16 @@
+# Minimal private TUI — fully valid Project Spec (SPEC-FOUNDRY-002 Appendix B).
+# Copy, then edit name / module / destination (basename MUST equal name).
+# Or scaffold with: foundry init --out ./my.toml --name … --module … --archetype tui
+schema = 1
+name = "minimal-tui"
+module = "github.com/example/minimal-tui"
+description = "Minimal Foundry TUI example for validate, plan, and generate"
+archetype = "tui"
+destination = "./minimal-tui"
+# Empty profiles is the default. The only selectable optional profile today is
+# "distribution" (requires visibility=public and github.com/<owner>/<name>).
+profiles = []
+
+[git]
+init = true
+initial_branch = "main"

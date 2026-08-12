@@ -1,0 +1,1 @@
+{"schema":1,"command":"version","ok":true,"result":{"version":"0.1.0-test","commit":"abc1234","go":"go1.26.5","catalog_digest":"e83d7f3f43fc95e14fb736c705baf3836ad8e527389badef220f990574312c72"},"error":null,"warnings":[]}

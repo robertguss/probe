@@ -1,0 +1,23 @@
+catalog show prints one unit's validated manifest metadata (including core).
+IDs are exact only — no did-you-mean. Unknown ids fail closed with
+catalog.invalid naming the sorted available set.
+
+Write-free: no network, no filesystem writes, no subprocesses.
+
+Examples:
+  foundry catalog show core
+  foundry catalog show cli
+  foundry catalog show tui
+  foundry catalog show distribution
+
+Usage:
+  foundry catalog show <id> [flags]
+
+Flags:
+  -h, --help   help for show
+
+Global Flags:
+      --color string    color mode: auto|always|never (text mode only) (default "auto")
+      --output string   output mode: text|json (default "text")
+      --quiet           suppress non-essential human output (text mode only)
+      --verbose         diagnostic detail on stderr (text mode only)

@@ -1,0 +1,4 @@
+# Expected error id: spec.parse_error
+# Cause: unclosed string (TOML syntax).
+schema = 1
+name = "parse-error

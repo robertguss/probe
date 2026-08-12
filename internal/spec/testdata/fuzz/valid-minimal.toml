@@ -1,0 +1,7 @@
+schema = 1
+name = "fuzz-seed"
+module = "github.com/example/fuzz-seed"
+description = "Fuzz corpus seed — valid minimal CLI"
+archetype = "cli"
+destination = "./fuzz-seed"
+profiles = []

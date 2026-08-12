@@ -1,0 +1,6 @@
+state||normalized||transition
+progress|freeze-tree|normalized|
+state||frozen||transition
+progress|verify-tools|frozen|
+state||failed-preserved||failure
+terminal||failed-preserved|failed-preserved|terminal|stage_path=.foundry-demo-deadbeef

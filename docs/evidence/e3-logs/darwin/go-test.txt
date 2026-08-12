@@ -1,0 +1,52 @@
+=== RUN   TestSkipNoticeGoldens
+--- PASS: TestSkipNoticeGoldens (0.00s)
+=== RUN   TestFormatSkipNotice_OKEmpty
+--- PASS: TestFormatSkipNotice_OKEmpty (0.00s)
+=== RUN   TestFormatSkipNotice_DefaultFallback
+--- PASS: TestFormatSkipNotice_DefaultFallback (0.00s)
+=== RUN   TestSanitizeEnvForRace
+--- PASS: TestSanitizeEnvForRace (0.00s)
+=== RUN   TestGenerationGateSteps_AppendixE
+--- PASS: TestGenerationGateSteps_AppendixE (0.00s)
+=== RUN   TestE3_Preflight_HostCompiler
+E3PROBE	os=darwin arch=arm64 probe=preflight step=host_compiler args="PreflightWithEnv(host)" errno= outcome=pass cgo=1 compiler="/usr/bin/clang" skip="" detail="compiler preflight ok; PATH lookup clang; version=Apple clang version 21.0.0 (clang-2100.1.1.101)"
+--- PASS: TestE3_Preflight_HostCompiler (0.13s)
+=== RUN   TestE3_Preflight_MissingCompiler_SkipNotice
+E3PROBE	os=darwin arch=arm64 probe=preflight step=missing_compiler args="PATH=/nonexistent-e3-empty-path" errno= outcome=pass cgo=1 compiler="" skip="race detector skipped: host C compiler unavailable (requires CGO_ENABLED=1 and a working C compiler); this is not a silent pass" detail="no C compiler on PATH or via CC; PATH has no gcc/clang/cc"
+--- PASS: TestE3_Preflight_MissingCompiler_SkipNotice (0.00s)
+=== RUN   TestE3_Preflight_CGODisabled_SkipNotice
+E3PROBE	os=darwin arch=arm64 probe=preflight step=cgo_disabled args="" errno= outcome=pass cgo=0 compiler="" skip="race detector skipped: CGO_ENABLED=0 (race requires CGO_ENABLED=1 after compiler preflight); this is not a silent pass" detail="CGO_ENABLED=0 in preflight environment"
+--- PASS: TestE3_Preflight_CGODisabled_SkipNotice (0.00s)
+=== RUN   TestE3_Preflight_BrokenCompiler_SkipNotice
+E3PROBE	os=darwin arch=arm64 probe=preflight step=broken_compiler args="" errno= outcome=pass cgo= compiler="/var/folders/8j/sfr9qqcj73j4p6nhwcfpr0th0000gn/T/TestE3_Preflight_BrokenCompiler_SkipNotice2612448510/001/badcc" skip="race detector skipped: host C compiler unavailable (requires CGO_ENABLED=1 and a working C compiler); this is not a silent pass" detail="compiler probe failed: /var/folders/8j/sfr9qqcj73j4p6nhwcfpr0th0000gn/T/TestE3_Preflight_BrokenCompiler_SkipNotice2612448510/001/badcc -c failed: exit status 1: badcc: refusing compile; CC=/var/folders/8j/sfr9qqcj73j4p6nhwcfpr0th0000gn/T/TestE3_Preflight_BrokenCompiler_SkipNotice2612448510/001/badcc"
+--- PASS: TestE3_Preflight_BrokenCompiler_SkipNotice (0.01s)
+=== RUN   TestE3_KnownRace_Detected
+E3PROBE	os=darwin arch=arm64 probe=known_race step=preflight args="" errno= outcome=pass cgo=1 compiler="/usr/bin/clang" skip="" detail="compiler preflight ok; PATH lookup clang"
+E3PROBE	os=darwin arch=arm64 probe=known_race step=go_test_race args="go test -race -count=1 -timeout 60s ./integration/hostile/e3/knownrace/ FOUNDRY_KNOWN_RACE=1" errno= outcome=info cgo=1 compiler="/usr/bin/clang" skip="" detail="==================\nWARNING: DATA RACE\nRead at 0x00c000094198 by goroutine 8:\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.(*RacyCounter).Inc.func1()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race.go:25 +0x34\n\nPrevious write at 0x00c000094198 by goroutine 9:\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.(*RacyCounter).Inc.func2()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race.go:29 +0x44\n\nGoroutine 8 (running) created at:\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.(*RacyCounter).Inc()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race.go:24 +0xcc\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.TestKnownDataRace()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race_test.go:23 +0xa8\n  testing.tRunner()\n      /Users/runner/hostedtoolcache/go/1.26.5/arm64/src/testing/testing.go:2036 +0x164\n  testing.(*T).Run.gowrap1()\n      /Users/runner/hostedtoolcache/go/1.26.5/arm64/src/testing/testing.go:2101 +0x34\n\nGoroutine 9 (finished) created at:\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.(*RacyCounter).Inc()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race.go:28 +0x164\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.TestKnownDataRace()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race_test.go:23 +0xa8\n  testing.tRunner()\n      /Users/runner/hostedtoolcache/go/1.26.5/arm64/src/testing/testing.go:2036 +0x164\n  testing.(*T).Run.gowrap1()\n      /Users/runner/hostedtoolcache/go/1.26.5/arm64/src/testing/testing.go:2101 +0x34\n==================\n==================\nWARNING: DATA RACE\nRead at 0x00c0000941b8 by goroutine 13:\n  github.com/robertguss/go-foundry-cli/integration/h…(truncated)"
+E3PROBE	os=darwin arch=arm64 probe=known_race step=expect_data_race args="" errno= outcome=pass cgo= compiler="" skip="" detail="DATA RACE reported; race instrumentation active"
+--- PASS: TestE3_KnownRace_Detected (0.20s)
+=== RUN   TestE3_KnownRace_WithoutRaceFlag
+E3PROBE	os=darwin arch=arm64 probe=known_race step=without_race_flag args="go test -count=1 (no -race) CGO_ENABLED=0" errno= outcome=pass cgo=0 compiler="" skip="" detail="ok  \tgithub.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace\t0.006s"
+--- PASS: TestE3_KnownRace_WithoutRaceFlag (0.15s)
+=== RUN   TestE3_GenerationGate_NeverIncludesRace
+E3PROBE	os=darwin arch=arm64 probe=generation_gate step=default_and_strict args="DefaultGenerationGate+StrictGenerationGate" errno= outcome=pass cgo= compiler="" skip="" detail="Section 35.1/35.2 steps exclude -race; race is CI/strict-workflow only (35.4)"
+--- PASS: TestE3_GenerationGate_NeverIncludesRace (0.00s)
+=== RUN   TestE3_ProductCGO_Zero
+E3PROBE	os=darwin arch=arm64 probe=product_cgo step=cgo_enabled_0_compile args="go test -c -o … ./integration/hostile/e3/" errno= outcome=pass cgo=0 compiler="" skip="" detail="go test -c with CGO_ENABLED=0 succeeded (product/release posture)"
+--- PASS: TestE3_ProductCGO_Zero (0.18s)
+=== RUN   TestE3_SkipNotice_NeverSilentPass
+=== RUN   TestE3_SkipNotice_NeverSilentPass/empty-path
+=== RUN   TestE3_SkipNotice_NeverSilentPass/cgo-zero
+--- PASS: TestE3_SkipNotice_NeverSilentPass (0.00s)
+    --- PASS: TestE3_SkipNotice_NeverSilentPass/empty-path (0.00s)
+    --- PASS: TestE3_SkipNotice_NeverSilentPass/cgo-zero (0.00s)
+=== RUN   TestE3_Matrix_EndToEnd
+E3PROBE	os=darwin arch=arm64 probe=matrix step=preflight args="" errno= outcome=pass cgo=1 compiler="/usr/bin/clang" skip="" detail="compiler preflight ok; PATH lookup clang | Apple clang version 21.0.0 (clang-2100.1.1.101)"
+E3PROBE	os=darwin arch=arm64 probe=matrix step=known_race args="go test -race ./integration/hostile/e3/knownrace/" errno= outcome=pass cgo=1 compiler="/usr/bin/clang" skip="" detail="==================\nWARNING: DATA RACE\nRead at 0x00c000094198 by goroutine 8:\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.(*RacyCounter).Inc.func1()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race.go:25 +0x34\n\nPrevious write at 0x00c000094198 by goroutine 9:\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.(*RacyCounter).Inc.func2()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race.go:29 +0x44\n\nGoroutine 8 (running) created at:\n  github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace.(*RacyCounter).Inc()\n      /Users/runner/work/go-foundry-cli/go-foundry-cli/integration/hostile/e3/knownrace/race.go:24 +0xcc\n  github.com/robertguss/go-found…(truncated)"
+E3PROBE	os=darwin arch=arm64 probe=matrix step=generation_gate args="" errno= outcome=pass cgo= compiler="" skip="" detail="strict generation steps exclude -race (Section 35.4)"
+E3PROBE	os=darwin arch=arm64 probe=matrix step=product_cgo0 args="" errno= outcome=pass cgo=0 compiler="" skip="" detail="knownrace package compiles with CGO_ENABLED=0"
+E3PROBE	os=darwin arch=arm64 probe=matrix step=skip_notice_golden args="" errno= outcome=pass cgo= compiler="" skip="race detector skipped: host C compiler unavailable (requires CGO_ENABLED=1 and a working C compiler); this is not a silent pass" detail="forced missing compiler"
+    e3_test.go:463: E3 matrix complete: pass=5 fail=0 os=darwin/arm64 compiler=/usr/bin/clang
+--- PASS: TestE3_Matrix_EndToEnd (0.38s)
+PASS
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e3	1.057s

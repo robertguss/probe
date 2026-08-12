@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "purpose": "Section 49 baseline seed from P2.7 dogfood (REQ-165 / REQ-247). Not an absolute gate.",
+  "bead": "go-foundry-cli-vu8",
+  "date_utc": "2026-07-31T03:48:00Z",
+  "host": {
+    "hostname": "dev-box",
+    "os": "linux",
+    "arch": "amd64",
+    "go": "go1.26.5",
+    "git": "2.43.0"
+  },
+  "samples": [
+    {
+      "command": "foundry generate --spec foundry-smoke-cli --verify default",
+      "cache": "host_module_cache_warm_first_placement",
+      "label": "cold_parent",
+      "elapsed_ms": 1465,
+      "source": "scripts/dogfood-cli.sh"
+    },
+    {
+      "command": "foundry generate --spec foundry-smoke-cli --verify default",
+      "cache": "host_module_cache_warm_sibling",
+      "label": "warm_sibling",
+      "elapsed_ms": 1468,
+      "source": "scripts/dogfood-cli.sh"
+    },
+    {
+      "command": "foundry generate --spec foundry-smoke-cli --verify default",
+      "cache": "host_module_cache_warm_first_placement",
+      "label": "cold_parent",
+      "elapsed_ms": 1459,
+      "source": "integration/dogfood TestDogfoodSmokeCLI"
+    },
+    {
+      "command": "foundry generate --spec foundry-smoke-cli --verify default",
+      "cache": "host_module_cache_warm_sibling",
+      "label": "warm_sibling",
+      "elapsed_ms": 1445,
+      "source": "integration/dogfood TestDogfoodSmokeCLI"
+    },
+    {
+      "command": "foundry generate --spec repo-map --verify default",
+      "cache": "host_module_cache_warm",
+      "label": "repo_map",
+      "elapsed_ms": 1474,
+      "source": "scripts/dogfood-cli.sh --with-repo-map"
+    }
+  ],
+  "notes": [
+    "True cold GOMODCACHE/GOCACHE clears are owned by go-foundry-cli-j8h.1.",
+    "plan_sha256 varies with absolute destination path; do not treat as content digest.",
+    "No absolute pass/fail thresholds invented from this seed."
+  ]
+}

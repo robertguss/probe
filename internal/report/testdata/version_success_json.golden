@@ -1,0 +1,1 @@
+{"schema":1,"command":"version","ok":true,"result":{"catalog_digest":"deadbeefcafebabe000000000000000000000000000000000000000000000000","commit":"abc1234","go":"go1.26.5","version":"0.1.0-test"},"error":null,"warnings":[]}

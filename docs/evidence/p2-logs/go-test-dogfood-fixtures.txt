@@ -1,0 +1,2 @@
+ok  	github.com/robertguss/go-foundry-cli/integration/dogfood	156.380s
+ok  	github.com/robertguss/go-foundry-cli/integration/fixtures	129.790s

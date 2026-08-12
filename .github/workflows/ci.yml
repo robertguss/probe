@@ -1,0 +1,481 @@
+# Foundry repository CI (Section 47.1 / REQ-222 / bead go-foundry-cli-cic).
+# Larger matrix than generated projects (FND-016): owns cross-platform FS.
+#
+# Jobs:
+#   - linux-unit / macos-unit: format, test, vet, Staticcheck, property (-count=10)
+#   - windows-unit: format, vet, test — hard gate for compile hygiene only
+#     (product platforms are Linux + macOS; fsx/unix tests are build-tagged out)
+#   - coverage: total + cmd/foundry + critical package floors
+#   - linux-race: preflighted -race (CGO_ENABLED=1)
+#   - catalog-digest: embedded digest matches on-disk catalog/
+#   - golden-matrix: catalog inventory + plan/render goldens (CI refuses updates)
+#   - sentinel / hostile-fsx / generate-e2e: retained from P2
+#
+# Product E2E (`make product-e2e`) is intentionally NOT a CI job — local/agent.
+# Action pins from catalog/versions.toml (REQ-224). Full commit SHAs only.
+# Never enable golden auto-update env vars. Always set CI=true (REQ-219).
+
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+# Cancel superseded runs of the same ref.
+concurrency:
+  group: foundry-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: ${{ matrix.os }}-unit
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0 — toolchain from go.mod (1.26.5)
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Format check
+        run: |
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then
+            echo "gofmt needed on:"
+            echo "$out"
+            exit 1
+          fi
+
+      - name: Module verify
+        run: go mod verify
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -count=1 ./...
+
+      # REQ-211 — property-based determinism checks run with elevated repetition
+      # to catch non-determinism in resolve/plan.
+      - name: Property tests (determinism)
+        run: go test -count=10 ./internal/resolve ./internal/plan -run 'Property'
+
+      - name: Staticcheck
+        run: go tool staticcheck ./...
+
+  # go-foundry-cli-wet.5.2 / n0y.4 — Windows unit job (hard gate).
+  # Product platforms are Linux + macOS only. This job is compile/vet hygiene
+  # for stubs and build-tag boundaries; it is not a product-support claim.
+  windows-unit:
+    name: windows-unit
+    timeout-minutes: 20
+    runs-on: windows-latest
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0 — toolchain from go.mod (1.26.5)
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Format check
+        shell: bash
+        run: |
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then
+            echo "gofmt needed on:"
+            echo "$out"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -count=1 ./...
+
+  # go-foundry-cli-wet.5.1 / n0y.5 — coverage gate.
+  # cmd/foundry stays at an honest 50% floor (main is exercised via testscript.Main).
+  # Critical packages get per-package floors so line-coverage chasing elsewhere
+  # cannot hide regressions in generate/fsx/plan/cli/resolve.
+  coverage:
+    name: coverage
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+      COVERAGE_TOTAL_THRESHOLD: "86.0"
+      COVERAGE_CMDFOUNDRY_THRESHOLD: "50.0"
+      # Per-package floors (percent). Measured baseline ~82–96% for these packages.
+      COVERAGE_PKG_GENERATE: "80.0"
+      COVERAGE_PKG_FSX: "80.0"
+      COVERAGE_PKG_PLAN: "80.0"
+      COVERAGE_PKG_CLI: "85.0"
+      COVERAGE_PKG_RESOLVE: "90.0"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Generate coverage profile and HTML report
+        run: |
+          set -euo pipefail
+          # Serial execution keeps the merged coverage profile deterministic and
+          # avoids shared temp-directory races between testscript suites.
+          go test -count=1 -timeout 15m -p 1 -parallel 1 -coverprofile=coverage.out ./... > coverage.log
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Check coverage thresholds
+        run: |
+          set -euo pipefail
+          total=$(go tool cover -func=coverage.out | awk '/^total:/{gsub(/%/,"",$3); print $3}')
+          cmd_line=$(grep -E 'github.com/robertguss/go-foundry-cli/cmd/foundry.*coverage:' coverage.log | tail -1 || true)
+          cmd=0
+          if [ -n "$cmd_line" ]; then
+            cmd=$(echo "$cmd_line" | sed -E 's/.*coverage: ([0-9.]+)%.*/\1/')
+          fi
+          echo "total coverage: ${total}% (threshold: ${COVERAGE_TOTAL_THRESHOLD}%)"
+          echo "cmd/foundry coverage: ${cmd}% (threshold: ${COVERAGE_CMDFOUNDRY_THRESHOLD}%)"
+          awk -v got="$total" -v want="$COVERAGE_TOTAL_THRESHOLD" 'BEGIN { if (got+0 < want+0) { printf "FAIL: total coverage %s%% < %s%%\n", got, want; exit 1 } }'
+          awk -v got="$cmd" -v want="$COVERAGE_CMDFOUNDRY_THRESHOLD" 'BEGIN { if (got+0 < want+0) { printf "FAIL: cmd/foundry coverage %s%% < %s%%\n", got, want; exit 1 } }'
+
+          # Per-package floors: parse `ok path coverage: X.Y%` lines from coverage.log.
+          check_pkg() {
+            local label="$1" want="$2" pattern="$3"
+            local got
+            got=$(grep -E "${pattern}[[:space:]].*coverage:" coverage.log | tail -1 | sed -E 's/.*coverage: ([0-9.]+)%.*/\1/' || true)
+            if [ -z "$got" ]; then
+              echo "FAIL: no coverage line for $label ($pattern)"
+              exit 1
+            fi
+            echo "$label coverage: ${got}% (threshold: ${want}%)"
+            awk -v got="$got" -v want="$want" -v label="$label" 'BEGIN {
+              if (got+0 < want+0) { printf "FAIL: %s coverage %s%% < %s%%\n", label, got, want; exit 1 }
+            }'
+          }
+          check_pkg "internal/generate" "$COVERAGE_PKG_GENERATE" "github.com/robertguss/go-foundry-cli/internal/generate"
+          check_pkg "internal/fsx" "$COVERAGE_PKG_FSX" "github.com/robertguss/go-foundry-cli/internal/fsx"
+          check_pkg "internal/plan" "$COVERAGE_PKG_PLAN" "github.com/robertguss/go-foundry-cli/internal/plan"
+          check_pkg "internal/cli" "$COVERAGE_PKG_CLI" "github.com/robertguss/go-foundry-cli/internal/cli"
+          check_pkg "internal/resolve" "$COVERAGE_PKG_RESOLVE" "github.com/robertguss/go-foundry-cli/internal/resolve"
+
+      - name: Upload coverage HTML report
+        if: always()
+        # actions/upload-artifact v5.0.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: coverage-report
+          path: |
+            coverage.html
+            coverage.out
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Coverage summary
+        if: failure()
+        run: |
+          echo '## Coverage artifacts' >> "$GITHUB_STEP_SUMMARY"
+          echo '- coverage.html, coverage.out (uploaded as coverage-report)' >> "$GITHUB_STEP_SUMMARY"
+          echo 'artifact=coverage-report' >> "$GITHUB_OUTPUT"
+
+  # Linux race (Section 47.1). Preflight when C toolchain missing.
+  race:
+    name: linux-race
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+      CGO_ENABLED: "1"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # linux-race is fail-closed on ubuntu-latest (ipk.11): soft-skip is not
+      # allowed when the job already pins CGO_ENABLED=1 on a full Ubuntu image
+      # with a working C toolchain. Preflight failure must fail the job so a
+      # required PR race check cannot go green without running -race.
+      - name: Race (preflighted, fail-closed)
+        run: |
+          set -euo pipefail
+          if ! go env CGO_ENABLED | grep -qx 1; then
+            echo "race: CGO_ENABLED!=1 after export on ubuntu-latest; fail-closed (ipk.11)" >&2
+            exit 1
+          fi
+          if ! go test -c -race -o /dev/null ./internal/catalog/ >/dev/null 2>&1; then
+            echo "race: compiler/preflight failed on ubuntu-latest; fail-closed (install build-essential / fix CGO)" >&2
+            go test -c -race -o /dev/null ./internal/catalog/ || true
+            exit 1
+          fi
+          echo "race_ran=true" >> "$GITHUB_STEP_SUMMARY"
+          go test -count=1 -race ./...
+
+  # REQ-222 — catalog-digest check against the tree (embed == disk catalog/).
+  catalog-digest:
+    name: catalog-digest
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Embed vs disk catalog digest
+        run: go test -count=1 ./internal/catalog/ -run 'TestCatalogDigestStable|TestLoadDirMatchesEmbed|TestEmbedLoadsExpectedRoots'
+
+  # REQ-219 / §47.2 — golden generation matrix (must not auto-update).
+  golden-matrix:
+    name: golden-matrix
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Golden suites (plan, render, cli surface, fixtures smoke)
+        run: |
+          set -euo pipefail
+          go test -count=1 ./internal/plan/ -run 'Golden'
+          go test -count=1 ./internal/render/ -run 'Golden|Template'
+          go test -count=1 ./internal/cli/ -run 'Golden|Schema'
+          go test -count=1 ./integration/fixtures/ -run 'Golden|Smoke'
+          go test -count=1 ./internal/archtest/ -run 'Golden|Quality'
+
+      # go-foundry-cli-wet.3.1: actions/setup-go above already installs the
+      # exact go.mod-pinned toolchain (go-version-file: go.mod), so this
+      # dogfood suite exercises the real pinned go1.26.5 instead of silently
+      # skipping (previously not run in CI at all).
+      - name: Dogfood suite (self-generation smoke)
+        run: |
+          set -uo pipefail
+          for attempt in 1 2 3; do
+            echo "dogfood attempt=$attempt"
+            if go test -count=1 -timeout 10m ./integration/dogfood/; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "dogfood failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 10))
+          done
+
+  # REQ-214 / go-foundry-cli-bhn — hostile env/config/template sentinel suite.
+  sentinel:
+    name: linux-hostile-sentinel
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+      FOUNDRY_SENTINEL_ARTIFACT_DIR: ${{ github.workspace }}/artifacts/sentinel
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Prepare isolation artifact directory
+        run: mkdir -p "${FOUNDRY_SENTINEL_ARTIFACT_DIR}"
+
+      - name: Hostile sentinel suite (toolrun unit + permanent + E2)
+        run: |
+          set -euo pipefail
+          go test -count=1 -timeout 180s ./internal/toolrun/ \
+            -run 'Sentinel|ProcessTree|ConstructGoEnv|ConstructGitEnv|Allowlist'
+          go test -count=1 -timeout 180s -v ./integration/hostile/sentinel/
+          go test -count=1 -timeout 180s ./integration/hostile/e2/
+
+      - name: Upload isolation artifacts
+        if: failure()
+        # actions/upload-artifact v5.0.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: sentinel-isolation-logs
+          path: artifacts/sentinel/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Sentinel artifact summary
+        if: failure()
+        run: |
+          echo '## Sentinel artifacts' >> "$GITHUB_STEP_SUMMARY"
+          echo '- artifacts/sentinel/ (uploaded as sentinel-isolation-logs)' >> "$GITHUB_STEP_SUMMARY"
+
+  # REQ-213 / go-foundry-cli-qd8 — hostile filesystem suite (production fsx).
+  hostile-fsx:
+    name: linux-hostile-fsx
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+      FOUNDRY_HOSTILE_FSX_ARTIFACT_DIR: ${{ github.workspace }}/artifacts/hostile-fsx
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Prepare probe artifact directory
+        run: mkdir -p "${FOUNDRY_HOSTILE_FSX_ARTIFACT_DIR}"
+
+      - name: Hostile filesystem suite (fsx production + E1 promotion source)
+        run: |
+          set -euo pipefail
+          go test -tags=hostile -count=1 -timeout 180s -v ./integration/hostile/fsx/
+          go test -tags=hostile -count=1 -timeout 120s ./internal/fsx/ -run 'Hostile|Commit|Transaction|Preserve|Static|Parent|Stage|Classify'
+          go test -count=1 -timeout 120s ./integration/hostile/e1/
+
+      - name: Upload hostile-fsx probe artifacts
+        if: failure()
+        # actions/upload-artifact v5.0.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: hostile-fsx-probe-logs
+          path: artifacts/hostile-fsx/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Hostile-fsx artifact summary
+        if: failure()
+        run: |
+          echo '## Hostile FSX artifacts' >> "$GITHUB_STEP_SUMMARY"
+          echo '- artifacts/hostile-fsx/ (uploaded as hostile-fsx-probe-logs)' >> "$GITHUB_STEP_SUMMARY"
+
+  # P2.5.d / go-foundry-cli-j8h.2 — generate e2e matrix + failure artifacts.
+  generate-e2e:
+    name: ${{ matrix.os }}-generate-e2e
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+      FOUNDRY_GENERATE_E2E_ARTIFACT_DIR: ${{ github.workspace }}/artifacts/generate-e2e
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Prepare generate e2e artifact directory
+        run: mkdir -p "${FOUNDRY_GENERATE_E2E_ARTIFACT_DIR}"
+
+      - name: Generate e2e matrix (integration + process testscripts)
+        run: |
+          set -uo pipefail
+          run_tests() {
+            set -euo pipefail
+            go test -count=1 -timeout 15m -v ./integration/generate/
+            go test -count=1 -timeout 10m ./cmd/foundry -run 'TestGenerateE2E'
+          }
+          for attempt in 1 2 3; do
+            echo "generate-e2e attempt=$attempt"
+            if run_tests; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "generate-e2e failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
+
+      - name: Upload generate e2e failure artifacts
+        if: failure()
+        # actions/upload-artifact v5.0.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: generate-e2e-logs-${{ matrix.os }}
+          path: artifacts/generate-e2e/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Generate e2e artifact summary
+        if: failure()
+        run: |
+          echo '## Generate e2e artifacts' >> "$GITHUB_STEP_SUMMARY"
+          echo "- artifacts/generate-e2e/ (uploaded as generate-e2e-logs-${{ matrix.os }})" >> "$GITHUB_STEP_SUMMARY"

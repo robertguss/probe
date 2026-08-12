@@ -1,0 +1,11 @@
+schema=1
+name=repo-map
+module=github.com/robertguss/repo-map
+description=Repository inventory CLI with text and JSON output
+archetype=cli
+destination=./repo-map
+binary=repo-map
+visibility=public
+profiles=["distribution"]
+git.init=true
+git.initial_branch=main

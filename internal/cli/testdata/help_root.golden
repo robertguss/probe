@@ -1,0 +1,40 @@
+Foundry generates complete, verified Go CLI and TUI repositories from a
+declarative Project Specification (foundry.toml).
+
+Command surface:
+  init       write a Project Spec TOML to an explicit --out path
+  validate   complete pure pipeline; discard plan
+  plan       authoritative dry run — Generation Plan, no side effects
+  generate   execute the plan (staging, verify, exclusive filesystem place)
+  catalog    list or show embedded catalog units
+  doctor     check Go pin / FOUNDRY_GO_BIN guidance (advisory)
+  version    report version, commit, Go toolchain, catalog digest
+
+plan is the authoritative dry run: inspect the Generation Plan before any
+project write. There is no separate dry run command or flag.
+
+The specification path is always explicit via --spec <path|-> (no implicit
+working-directory discovery). Stdin is selected with --spec -. init requires
+an explicit --out path (also no discovery).
+
+Usage:
+  foundry [flags]
+  foundry [command]
+
+Available Commands:
+  catalog     Inspect the embedded catalog
+  doctor      Check Go toolchain pin and FOUNDRY_GO_BIN guidance (advisory)
+  generate    Execute the Generation Plan (staging, verify, place destination)
+  init        Write a valid Project Spec TOML to an explicit path (flags only)
+  plan        Authoritative dry run: print the complete Generation Plan (no side effects)
+  validate    Validate a Project Specification through the complete pure pipeline
+  version     Print Foundry version, commit, Go toolchain, and catalog digest
+
+Flags:
+      --color string    color mode: auto|always|never (text mode only) (default "auto")
+  -h, --help            help for foundry
+      --output string   output mode: text|json (default "text")
+      --quiet           suppress non-essential human output (text mode only)
+      --verbose         diagnostic detail on stderr (text mode only)
+
+Use "foundry [command] --help" for more information about a command.

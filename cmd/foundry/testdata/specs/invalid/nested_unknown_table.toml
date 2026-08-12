@@ -1,0 +1,12 @@
+# Expected error id: spec.unknown_field
+# Hostile: nested unknown table is fatal (no includes/meta/expressions tables).
+schema = 1
+name = "nested-unknown"
+module = "github.com/example/nested-unknown"
+description = "Nested unknown table fixture"
+archetype = "cli"
+destination = "./nested-unknown"
+profiles = []
+
+[meta]
+author = "x"

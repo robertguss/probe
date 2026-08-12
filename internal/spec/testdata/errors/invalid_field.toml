@@ -1,0 +1,9 @@
+# Expected error id: spec.invalid_field
+# Cause: name must be lowercase ASCII kebab-case (underscore forbidden).
+schema = 1
+name = "bad_name"
+module = "github.com/example/bad_name"
+description = "Invalid field name fixture"
+archetype = "cli"
+destination = "./bad_name"
+profiles = []

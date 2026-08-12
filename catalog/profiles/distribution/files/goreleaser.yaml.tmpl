@@ -1,0 +1,54 @@
+# GoReleaser config for [[.Name]] (distribution profile / Section 20).
+# CGO_ENABLED=0; darwin/linux × amd64/arm64; checksums + SBOM (Syft).
+# Tool version: goreleaser v2.17.1 (catalog pin).
+
+version: 2
+
+project_name: [[.Binary]]
+
+builds:
+  - id: [[.Binary]]
+    main: ./cmd/[[.Binary]]
+    binary: [[.Binary]]
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X [[.Module]]/internal/version.Version={{.Version}}
+      - -X [[.Module]]/internal/version.Commit={{.FullCommit}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.json"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

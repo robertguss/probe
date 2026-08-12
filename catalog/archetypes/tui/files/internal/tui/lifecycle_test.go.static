@@ -1,0 +1,76 @@
+package tui
+
+import (
+	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+
+	tea "charm.land/bubbletea/v2"
+)
+
+// TestLifecycle_StaticOptions asserts Section 18.3 program options are present
+// in this package's sources (WithContext + WithoutSignalHandler; no
+// WithoutCatchPanics). Full PTY matrices live in Foundry E4 / Phase 3.1.b.
+func TestLifecycle_StaticOptions(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	dir := filepath.Dir(file)
+	src, err := os.ReadFile(filepath.Join(dir, "app.go"))
+	if err != nil {
+		t.Fatalf("read app.go: %v", err)
+	}
+	body := string(src)
+	for _, want := range []string{
+		"tea.WithContext",
+		"tea.WithoutSignalHandler",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("app.go missing %s", want)
+		}
+	}
+	if strings.Contains(body, "WithoutCatchPanics") {
+		// Comment mentioning the forbidden option is OK; call is not.
+		fset := token.NewFileSet()
+		f, err := parser.ParseFile(fset, "app.go", src, 0)
+		if err != nil {
+			t.Fatalf("parse app.go: %v", err)
+		}
+		ast.Inspect(f, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			if sel.Sel.Name == "WithoutCatchPanics" {
+				t.Error("WithoutCatchPanics must not be called (framework panic recovery stays on)")
+			}
+			return true
+		})
+	}
+}
+
+func TestLifecycle_ClassifyAndMap(t *testing.T) {
+	if got := ClassifyRunError(nil, QuitClassQKey); got != QuitClassQKey {
+		t.Fatalf("classify q: %q", got)
+	}
+	if got := ClassifyRunError(tea.ErrProgramKilled, ""); got != QuitClassSignal {
+		t.Fatalf("classify killed: %q", got)
+	}
+	if got := ClassifyRunError(tea.ErrProgramPanic, ""); got != QuitClassPanic {
+		t.Fatalf("classify panic: %q", got)
+	}
+	if MapExitCode(errors.New("x"), QuitClassQKey) != ExitOK {
+		t.Fatal("q class wins over run error (cancel-before-quit race)")
+	}
+}

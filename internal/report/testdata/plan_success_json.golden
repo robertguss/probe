@@ -1,0 +1,1 @@
+{"schema":1,"command":"plan","ok":true,"result":{"files":["go.mod","cmd/demo-cli/main.go"],"project":{"module":"example.com/demo-cli","name":"demo-cli"},"schema":1},"error":null,"warnings":[]}

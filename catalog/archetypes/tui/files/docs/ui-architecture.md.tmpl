@@ -1,0 +1,99 @@
+# UI architecture
+
+Role: TUI lifecycle, model/update/view rules, and effect/debug-log contracts
+for **[[.Name]]** (archetype `tui`). Package growth rules live in
+`docs/architecture.md`; agent workflow in root `AGENTS.md`.
+
+## Single lifecycle owner (Section 18.3)
+
+Exactly one owner for signals, cancellation, effects, panics, and exit:
+
+1. `cmd/[[.Binary]]/main.go` creates one application context with
+   `signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)`.
+2. The program is constructed with `tea.WithContext(appCtx)` and
+   `tea.WithoutSignalHandler()`. **No second signal handler** exists anywhere.
+3. Bubble Tea's default panic recovery remains enabled (`WithoutCatchPanics`
+   is never used). The framework owns terminal restoration on panic.
+4. Every user quit path (for example the `q` key) invokes the application
+   cancel function **before** returning `tea.Quit`.
+5. Every future effect (`tea.Cmd`) must block only in context-aware operations
+   derived from `appCtx` and return promptly after cancellation. Bubble Tea
+   does not join command goroutines — cooperation is mandatory.
+6. Exit mapping: deliberate `q` → **0**; Ctrl-C-as-key / external SIGINT/SIGTERM
+   / `tea.ErrProgramKilled` → **130**; startup or runtime failure → **1**.
+
+## Package layout (Section 18.2)
+
+```text
+internal/tui/
+  app.go            # program construction and options; exit mapping
+  state.go          # single model type
+  update.go         # sole state-transition function
+  update_test.go
+  view.go           # pure rendering
+  view_test.go
+  keymap.go         # bindings + Bubbles help.KeyMap
+  theme.go          # centralized Lip Gloss styles
+  lifecycle_test.go # static option + exit-mapping checks
+```
+
+There is **no** `effects.go` or `messages.go` in the generated shell: a UI with
+no asynchronous behavior gets no empty effect scaffolding (FND-014).
+
+## State, update, view (Section 18.4)
+
+- One model type in `state.go`.
+- `update.go` is the only state-transition site.
+- `view.go` is pure and side-effect free.
+- Styling is centralized in `theme.go` (Lip Gloss); key bindings in `keymap.go`
+  drive both behavior and the Bubbles help component.
+- Explicit minimum dimensions (`MinWidth` / `MinHeight`); below them the view
+  renders a deterministic "terminal too small" notice.
+- Typed messages appear only when the first real asynchronous feature needs
+  them (then add `messages.go` deliberately).
+
+## Startup flags (Section 18.5)
+
+`main` parses exactly three flags before starting the program:
+
+| Flag | Meaning |
+| ---- | ------- |
+| `--version` | Print build identity and exit 0 |
+| `--no-color` | Disable ANSI color in the TUI |
+| `--debug-log <basename>` | Create a new JSON slog debug log (see below) |
+
+Do not add startup flags that contradict this contract without updating this
+document.
+
+## Cooperative effects (Section 18.7) — rules for future code
+
+The generated shell contains **no** effects. When this project adds its first
+asynchronous feature:
+
+1. Construct effects as `tea.Cmd` values that receive `appCtx` (or a child).
+2. Block only in context-aware operations; return promptly after cancel.
+3. Report completion via typed messages.
+4. Tests MUST track effect start/finish and assert no effect remains active
+   when the program returns.
+
+Foundry proves these rules with an integration fixture (E4 lifecycle spike);
+generated repositories do not carry dead placeholder effect files.
+
+## Debug logging (Section 18.8)
+
+`--debug-log <name>` accepts a **safe basename only**:
+
+- no path separators, no `..`, not `.`, not empty, not a hidden name
+- resolved against the startup working directory captured once at process start
+- creates only a **new regular file** with `O_CREATE|O_EXCL|O_WRONLY`, mode
+  `0600` (re-applied with `chmod` after open so umask cannot widen it)
+- refuses every existing object (regular file, symlink, directory, FIFO, …)
+- never truncates, appends, follows symlinks for, or creates parent directories
+- logging uses `slog` JSON with redaction of known-sensitive keys
+- without the flag, the TUI writes no log files
+
+## Terminal restoration (Section 18.6)
+
+The alternate screen is entered and restored by Bubble Tea. Quit with `q`,
+SIGINT/SIGTERM cancellation, and framework-recovered panic must all restore
+the terminal.

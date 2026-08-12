@@ -1,0 +1,131 @@
+step=01 name=machine go=go version go1.26.5 linux/amd64 goroot=/home/rob/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.5.linux-amd64 os=Linux arch=x86_64
+step=02 name=git git=git version 2.43.0
+step=03 name=host hostname=dev-box
+step=04 name=build_foundry 
+step=05 name=foundry_version foundry v0.0.0-20260731034008-c95d6364b5c5+dirty commit: c95d6364b5c55fb685a437746092fa4976cf7f26-dirty go: go1.26.5 catalog_digest: fba7cd432c37bbe7e30fe5e4ff46034d381a14ff6e48ee7085e957ab028985d8 
+step=06 name=parent path=/tmp/foundry-dogfood-ve9g0B mode=700
+step=07 name=generate_smoke_cold spec=/home/rob/projects/go-foundry-cli/integration/fixtures/foundry-smoke-cli/foundry.toml dest=/tmp/foundry-dogfood-ve9g0B/foundry-smoke-cli
+progress: read-parse-spec
+progress: validate-spec
+progress: load-catalog
+progress: resolve
+progress: build-plan
+progress: tool-preflight
+progress: report-plan-network
+state: planned
+network disclosure:
+  go-mod-tidy: module resolution during go mod tidy on cold caches
+progress: acquire-parent
+state: parent-acquired
+progress: create-stage
+state: stage-created
+progress: render
+state: rendered
+progress: go-mod-tidy
+state: normalized
+progress: freeze-tree
+state: frozen
+progress: verify-tools
+state: verified
+progress: final-conformance
+state: conformed
+progress: git-init
+progress: git-template-cleanup
+state: git-initialized
+progress: parent-reobserve
+state: committing
+progress: commit
+state: committed
+progress: report
+generate: committed destination=/tmp/foundry-dogfood-ve9g0B/foundry-smoke-cli plan_sha256=69756aa01974063afd0544893387108739e53c1c41996a6da8193983096f8dde
+step=08 name=generate_smoke_cold_done exit=0 elapsed_ms=1465
+step=09 name=plan_sha256 value=69756aa01974063afd0544893387108739e53c1c41996a6da8193983096f8dde
+step=10 name=smoke_go_test 
+?   	github.com/example/foundry-smoke-cli/cmd/foundry-smoke-cli	[no test files]
+ok  	github.com/example/foundry-smoke-cli/internal/cli	0.033s
+ok  	github.com/example/foundry-smoke-cli/internal/version	0.004s
+step=11 name=smoke_go_test_done ok
+step=12 name=smoke_build 
+foundry-smoke-cli 0.0.0-dev
+go: go1.26.5
+step=13 name=smoke_exercise_done help+version ok
+step=14 name=generate_smoke_warm dest=/tmp/foundry-dogfood-warm-TKlCR4/foundry-smoke-cli
+progress: read-parse-spec
+progress: validate-spec
+progress: load-catalog
+progress: resolve
+progress: build-plan
+progress: tool-preflight
+progress: report-plan-network
+state: planned
+network disclosure:
+  go-mod-tidy: module resolution during go mod tidy on cold caches
+progress: acquire-parent
+state: parent-acquired
+progress: create-stage
+state: stage-created
+progress: render
+state: rendered
+progress: go-mod-tidy
+state: normalized
+progress: freeze-tree
+state: frozen
+progress: verify-tools
+state: verified
+progress: final-conformance
+state: conformed
+progress: git-init
+progress: git-template-cleanup
+state: git-initialized
+progress: parent-reobserve
+state: committing
+progress: commit
+state: committed
+progress: report
+generate: committed destination=/tmp/foundry-dogfood-warm-TKlCR4/foundry-smoke-cli plan_sha256=3eca1fd910063abcb7c126373a702616eca80b4176729c8dcfe4d8c6ea1799f3
+step=15 name=generate_smoke_warm_done exit=0 elapsed_ms=1468
+step=16 name=generate_repo_map spec=/home/rob/projects/go-foundry-cli/dogfood/repo-map/foundry.toml dest=/tmp/foundry-dogfood-ve9g0B/repo-map
+progress: read-parse-spec
+progress: validate-spec
+progress: load-catalog
+progress: resolve
+progress: build-plan
+progress: tool-preflight
+progress: report-plan-network
+state: planned
+network disclosure:
+  go-mod-tidy: module resolution during go mod tidy on cold caches
+progress: acquire-parent
+state: parent-acquired
+progress: create-stage
+state: stage-created
+progress: render
+state: rendered
+progress: go-mod-tidy
+state: normalized
+progress: freeze-tree
+state: frozen
+progress: verify-tools
+state: verified
+progress: final-conformance
+state: conformed
+progress: git-init
+progress: git-template-cleanup
+state: git-initialized
+progress: parent-reobserve
+state: committing
+progress: commit
+state: committed
+progress: report
+generate: committed destination=/tmp/foundry-dogfood-ve9g0B/repo-map plan_sha256=74813771b5fa4a63afdebdcd72521b3d9a260a85ed66414443ac2276884d21b8
+step=17 name=generate_repo_map_done exit=0 elapsed_ms=1474
+step=18 name=apply_inventory_overlay 
+step=19 name=wire_inventory ok
+step=20 name=repo_map_go_test 
+?   	github.com/robertguss/repo-map/cmd/repo-map	[no test files]
+ok  	github.com/robertguss/repo-map/internal/cli	0.036s
+ok  	github.com/robertguss/repo-map/internal/inventory	0.005s
+ok  	github.com/robertguss/repo-map/internal/version	0.003s
+step=21 name=repo_map_exercise_done inventory text+json ok
+step=22 name=summary cold_ms=1465 warm_ms=1468 with_repo_map=1
+step=23 name=done smoke-cli dogfood green

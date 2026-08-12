@@ -1,0 +1,9 @@
+# Expected error id: spec.invalid_field
+# Cause: destination must not contain environment markers ($ or ${).
+schema = 1
+name = "env-dest"
+module = "github.com/example/env-dest"
+description = "Destination with env markers is rejected"
+archetype = "cli"
+destination = "${HOME}/env-dest"
+profiles = []

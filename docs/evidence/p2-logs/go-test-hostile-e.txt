@@ -1,0 +1,7 @@
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e1	0.091s
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e2	0.577s
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e3	5.241s
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace	0.015s
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e4	2.815s
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e5	0.030s
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/sentinel	0.180s

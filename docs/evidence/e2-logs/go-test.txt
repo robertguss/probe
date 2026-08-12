@@ -1,0 +1,143 @@
+=== RUN   TestE2_ConstructGoEnv_EmptyBaseAllowlist
+E2PROBE	os=linux arch=amd64 probe=construct_go step=allowlist_keys key= leak= args="CGO_ENABLED,GOAUTH,GOCACHE,GOCACHEPROG,GOENV,GOFLAGS,GOINSECURE,GOMODCACHE,GONOPROXY,GONOSUMDB,GOPATH,GOPRIVATE,GOPROXY,GOSUMDB,GOTOOLCHAIN,GOVCS,GOWORK,HOME,LANG,LC_ALL,PATH,TERM" errno= outcome=pass detail="key count=22"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOENV leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOWORK leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=LC_ALL leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOPRIVATE leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GONOSUMDB leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOINSECURE leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOFLAGS leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOAUTH leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=LANG leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=TERM leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOVCS leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=CGO_ENABLED leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOCACHEPROG leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GOTOOLCHAIN leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+E2PROBE	os=linux arch=amd64 probe=construct_go step=fixed_value key=GONOPROXY leak=false args="" errno= outcome=pass detail="want normative; mismatch=false"
+--- PASS: TestE2_ConstructGoEnv_EmptyBaseAllowlist (0.01s)
+=== RUN   TestE2_GoSentinelMatrix_NoLeak
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GOENV leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GOFLAGS leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GOCACHEPROG leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GOAUTH leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GOVCS leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GOPRIVATE leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GONOPROXY leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GONOSUMDB leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_fixed key=GOINSECURE leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value; normative_match=true"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_absent key=GODEBUG leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_absent key=GOEXPERIMENT leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_absent key=GCCGO leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_absent key=CC leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_absent key=CXX leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_absent key=CGO_CFLAGS leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=sentinel_matrix step=go_absent key=CGO_LDFLAGS leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+--- PASS: TestE2_GoSentinelMatrix_NoLeak (0.01s)
+=== RUN   TestE2_GoEnv_LiveToolValues
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOVCS leak=false args="go env GOVCS" errno= outcome=pass detail="observed_tool_value_match=true raw=*:off"
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOAUTH leak=false args="go env GOAUTH" errno= outcome=pass detail="observed_tool_value_match=true raw=off"
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=CGO_ENABLED leak=false args="go env CGO_ENABLED" errno= outcome=pass detail="observed_tool_value_match=true raw=0"
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GONOPROXY leak=false args="go env GONOPROXY" errno= outcome=pass detail="observed_tool_value_match=true raw="
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GONOSUMDB leak=false args="go env GONOSUMDB" errno= outcome=pass detail="observed_tool_value_match=true raw="
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOENV leak=false args="go env GOENV" errno= outcome=pass detail="observed_tool_value_match=true raw="
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOFLAGS leak=false args="go env GOFLAGS" errno= outcome=pass detail="observed_tool_value_match=true raw="
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOCACHEPROG leak=false args="go env GOCACHEPROG" errno= outcome=pass detail="observed_tool_value_match=true raw="
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOTOOLCHAIN leak=false args="go env GOTOOLCHAIN" errno= outcome=pass detail="observed_tool_value_match=true raw=local"
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOWORK leak=false args="go env GOWORK" errno= outcome=pass detail="observed_tool_value_match=true raw=off"
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOPRIVATE leak=false args="go env GOPRIVATE" errno= outcome=pass detail="observed_tool_value_match=true raw="
+E2PROBE	os=linux arch=amd64 probe=live_go_env step=go_env key=GOINSECURE leak=false args="go env GOINSECURE" errno= outcome=pass detail="observed_tool_value_match=true raw="
+--- PASS: TestE2_GoEnv_LiveToolValues (0.01s)
+=== RUN   TestE2_GOFLAGS_Toolexec_DoesNotRun
+E2PROBE	os=linux arch=amd64 probe=toolexec step=control_inherit key=GOFLAGS leak=true args="" errno= outcome=info detail="threat model: inherited GOFLAGS -toolexec ran=true"
+E2PROBE	os=linux arch=amd64 probe=toolexec step=isolated_construct key=GOFLAGS leak=false args="go test -a -c" errno= outcome=pass detail="constructed env must not execute host toolexec"
+--- PASS: TestE2_GOFLAGS_Toolexec_DoesNotRun (0.07s)
+=== RUN   TestE2_GOCACHEPROG_DoesNotRun
+E2PROBE	os=linux arch=amd64 probe=gocacheprog step=control_inherit key=GOCACHEPROG leak=true args="" errno= outcome=info detail="threat model: GOCACHEPROG ran=true"
+E2PROBE	os=linux arch=amd64 probe=gocacheprog step=isolated_construct key=GOCACHEPROG leak=false args="" errno= outcome=pass detail="empty GOCACHEPROG must not invoke host helper"
+--- PASS: TestE2_GOCACHEPROG_DoesNotRun (0.04s)
+=== RUN   TestE2_GOENV_FileNotRead
+E2PROBE	os=linux arch=amd64 probe=goenv_file step=control_read key=GOENV leak=true args="" errno= outcome=info detail="threat: GOENV file injects GOFLAGS containing toolexec=true"
+E2PROBE	os=linux arch=amd64 probe=goenv_file step=isolated_off key=GOENV leak=false args="go env GOENV GOFLAGS" errno= outcome=pass detail="child_GOENV=off tool_GOENV= tool_GOFLAGS_empty=true"
+--- PASS: TestE2_GOENV_FileNotRead (0.01s)
+=== RUN   TestE2_ConstructGitEnv_Allowlist
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=HOME leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_DIR leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_WORK_TREE leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=XDG_CONFIG_HOME leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_CONFIG leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_CONFIG_COUNT leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_EXEC_PATH leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_TRACE leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=EMAIL leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_AUTHOR_NAME leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_AUTHOR_EMAIL leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_COMMITTER_NAME leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=absent key=GIT_COMMITTER_EMAIL leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=construct_git step=allowlist key= leak= args="" errno= outcome=pass detail="keys=GIT_CONFIG_GLOBAL,GIT_CONFIG_NOSYSTEM,GIT_CONFIG_SYSTEM,GIT_TEMPLATE_DIR,LANG,LC_ALL,PATH"
+--- PASS: TestE2_ConstructGitEnv_Allowlist (0.00s)
+=== RUN   TestE2_GitInit_EmptyTemplate_NoHostCopy
+E2PROBE	os=linux arch=amd64 probe=git_template step=contrast_hostile key=GIT_TEMPLATE leak=true args="" errno= outcome=info detail="threat model: host template copies SENTINEL_TEMPLATE_FILE"
+E2PROBE	os=linux arch=amd64 probe=git_template step=isolated_empty key=GIT_TEMPLATE leak=false args="git init --initial-branch=main --template=<owned-empty>" errno= outcome=pass detail="sentinel_file=false hostile_hooks= hooks_entries="
+E2PROBE	os=linux arch=amd64 probe=git_config step=isolated_list key=GIT_CONFIG_GLOBAL leak=false args="" errno= outcome=pass detail="no hostile config origin; bytes=161"
+--- PASS: TestE2_GitInit_EmptyTemplate_NoHostCopy (0.01s)
+=== RUN   TestE2_ProcessTree_EqualsPlan
+E2PROBE	os=linux arch=amd64 probe=process_tree step=default_plan key= leak= args="go-mod-tidy:go mod tidy -mod=mod | go-mod-verify:go mod verify | go-test:go test -count=1 -buildvcs=false -mod=readonly ./... | go-vet:go vet -buildvcs=false -mod=readonly ./..." errno= outcome=pass detail="process-tree equals plan external_steps"
+E2PROBE	os=linux arch=amd64 probe=process_tree step=detect_extra_shell key= leak= args="" errno= outcome=pass detail="detected: count step= planned=4 observed=5; shell step=evil-shell unplanned step launched via shell; extra step=evil-shell unplanned step at index 4 argv=[\"sh\" \"-c\" \"true\"] shell_flag=true"
+E2PROBE	os=linux arch=amd64 probe=process_tree step=detect_env_pollution key= leak= args="" errno= outcome=pass detail="env step=go-mod-tidy env key GOFLAGS: planned=\"\" observed=\"-toolexec=/evil\"; env step=go-mod-tidy extra env key EVIL_EXTRA (not in plan allowlist); env step=go-mod-verify env key GOFLAGS: planned=\"\" observed=\"-toolexec=/evil\"; env step=go-mod-verify extra env key EVIL_EXTRA (not in plan allowlist); env step=go-test env key GOFLAGS: planned=\"\" observed=\"-toolexec=/evil\"; env step=go-test extra env key EVIL_EXTRA (not in plan allowlist); env step=go-vet env key GOFLAGS: planned=\"\" observed=\"-toolexec=/evil\"; env step=go-vet extra env key EVIL_EXTRA (not in plan allowlist)"
+--- PASS: TestE2_ProcessTree_EqualsPlan (0.00s)
+=== RUN   TestE2_ProcessTree_LiveGoEnvStep
+E2PROBE	os=linux arch=amd64 probe=process_tree step=live_go_env key= leak= args="go env GOFLAGS GOENV GOTOOLCHAIN" errno= outcome=pass detail="process-tree equals plan external_steps"
+--- PASS: TestE2_ProcessTree_LiveGoEnvStep (0.01s)
+=== RUN   TestE2_FullMatrix_EndToEnd
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GOENV leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GOFLAGS leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GOCACHEPROG leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GOAUTH leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GOVCS leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GOPRIVATE leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GONOPROXY leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GONOSUMDB leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-fixed key=GOINSECURE leak=false args="" errno= outcome=pass detail="Section 34.2 fixed/closed go surface; child must have normative value"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-absent key=GODEBUG leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-absent key=GOEXPERIMENT leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-absent key=GCCGO leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-absent key=CC leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-absent key=CXX leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-absent key=CGO_CFLAGS leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=go-absent key=CGO_LDFLAGS leak=false args="" errno= outcome=pass detail="undeclared host var; must be absent from empty-base construction"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GONOSUMDB leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=CGO_ENABLED leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOFLAGS leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOCACHEPROG leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GONOPROXY leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOINSECURE leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOTOOLCHAIN leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOENV leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOAUTH leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOVCS leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=live_go_env key=GOPRIVATE leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=HOME leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_DIR leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_WORK_TREE leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=XDG_CONFIG_HOME leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_CONFIG leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_CONFIG_COUNT leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_EXEC_PATH leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_TRACE leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=EMAIL leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_AUTHOR_NAME leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_AUTHOR_EMAIL leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_COMMITTER_NAME leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_absent key=GIT_COMMITTER_EMAIL leak=false args="" errno= outcome=pass detail="must be absent from git-init allowlist environment"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=git_template key=GIT_TEMPLATE leak=false args="" errno= outcome=pass detail=""
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=process_tree key= leak= args="go-mod-tidy:go mod tidy -mod=mod | go-mod-verify:go mod verify | go-test:go test -count=1 -buildvcs=false -mod=readonly ./... | go-vet:go vet -buildvcs=false -mod=readonly ./... | git-init:git init --initial-branch=main --template=/tmp/TestE2_FullMatrix_EndToEnd1141597502/001/foundry-git-template-1583863063 ." errno= outcome=pass detail="process-tree equals plan external_steps"
+E2PROBE	os=linux arch=amd64 probe=e2e_matrix step=marker_clean key= leak=false args="" errno= outcome=pass detail="no helper execution"
+    e2_test.go:948: E2 full matrix: pass=43 fail=0 os=linux/amd64
+    e2_test.go:955: E2_JSON_BYTES=12694
+--- PASS: TestE2_FullMatrix_EndToEnd (0.01s)
+=== RUN   TestE2_PlanClosedWorld_NoShell
+--- PASS: TestE2_PlanClosedWorld_NoShell (0.00s)
+PASS
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e2	0.193s
+EXIT:0

@@ -1,0 +1,5 @@
+--- FAIL: TestInjectedFail (0.00s)
+    repair_test.go:6: injected failure for agent repair scenario
+FAIL
+FAIL	github.com/example/foundry-smoke-cli/internal/cli	0.004s
+FAIL

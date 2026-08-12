@@ -1,0 +1,1 @@
+{"may_be_required":true,"verify_mode":"default","steps":[{"id":"go-mod-tidy","network":"may","reason":"module resolution during go mod tidy on cold caches"}],"reasons":["module resolution during go mod tidy on cold caches"]}

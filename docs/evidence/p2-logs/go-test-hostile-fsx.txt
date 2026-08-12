@@ -1,0 +1,2 @@
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/fsx	0.174s
+ok  	github.com/robertguss/go-foundry-cli/internal/fsx	0.222s

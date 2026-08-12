@@ -1,0 +1,27 @@
+# Dependency review on pull requests (distribution profile / Section 20).
+# Project: [[.Name]]
+# Action pins: full commit SHAs from Foundry catalog/versions.toml.
+
+name: dependency-review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: review
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Dependency Review
+        # actions/dependency-review-action v4.9.0
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0

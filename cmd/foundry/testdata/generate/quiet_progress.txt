@@ -1,0 +1,23 @@
+# Generate e2e — --quiet suppresses progress not network disclosure.
+
+mkdir $GEN_ROOT/parent-quiet
+chmod 0700 $GEN_ROOT/parent-quiet
+
+exec foundry generate --spec examples/minimal-cli.toml --dest $GEN_ROOT/parent-quiet/minimal-cli --quiet
+! stdout 'progress:'
+stdout 'network disclosure:'
+stdout 'go-mod-tidy'
+! stdout 'generate: wrote'
+exists $GEN_ROOT/parent-quiet/minimal-cli/go.mod
+
+# Full progress names present without --quiet (sample Section 29.2 ids).
+mkdir $GEN_ROOT/parent-prog
+chmod 0700 $GEN_ROOT/parent-prog
+exec foundry generate --spec examples/minimal-cli.toml --dest $GEN_ROOT/parent-prog/minimal-cli
+stdout 'progress: tool-preflight'
+stdout 'progress: report-plan-network'
+stdout 'progress: create-stage'
+stdout 'progress: commit'
+stdout 'generate: wrote'
+stdout 'git initialized'
+stdout 'no commits'

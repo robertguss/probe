@@ -1,0 +1,22 @@
+package version
+
+import (
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+)
+
+func TestVersionNonEmpty(t *testing.T) {
+	t.Parallel()
+	if diff := cmp.Diff("0.0.0-dev", Version); diff != "" {
+		t.Fatalf("Version mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestCommitDefaultEmpty(t *testing.T) {
+	t.Parallel()
+	// Commit may be stamped at release; default generated tree is empty.
+	if diff := cmp.Diff("", Commit); diff != "" {
+		t.Fatalf("Commit mismatch (-want +got):\n%s", diff)
+	}
+}

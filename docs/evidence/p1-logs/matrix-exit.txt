@@ -1,0 +1,13 @@
+=== RUN   TestReqTraceabilityPhaseExit
+    reqtrace_test.go:116: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=1 elapsed_ms=0 level=PHASE name=phase_exit outcome=start
+    reqtrace_test.go:117: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=2 elapsed_ms=0 level=STEP name=inputs outcome=info detail=phase_exit=P1 strict_paths=1
+    reqtrace_test.go:130: 
+        req-traceability: spec=125 matrix=125 ok=true
+          orphan_test_claims (warn) (32): REQ-003:internal/fsx/, REQ-010:internal/generate/, REQ-034:internal/generate/, REQ-036:internal/fsx/, REQ-036:internal/generate/, REQ-044:internal/fsx/, REQ-123:internal/generate/, REQ-124:internal/fsx/, REQ-125:internal/fsx/, REQ-126:internal/verify/, REQ-127:internal/generate/, REQ-127:internal/verify/, REQ-128:internal/gitinit/, REQ-129:internal/fsx/, REQ-130:internal/fsx/, REQ-131:internal/fsx/, REQ-132:internal/generate/, REQ-134:internal/fsx/, REQ-135:internal/toolrun/, REQ-150:internal/verify/, REQ-151:internal/verify/, REQ-152:internal/verify/, REQ-153:internal/toolrun/, REQ-154:internal/toolrun/, REQ-158:internal/generate/, REQ-160:internal/gitinit/, REQ-184:internal/fsx/, REQ-185:internal/generate/, REQ-185:internal/toolrun/, REQ-213:internal/fsx/, REQ-214:internal/toolrun/, REQ-221:internal/toolrun/
+        
+    reqtrace_test.go:145: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=3 elapsed_ms=4 level=ASSERT name=no_unverified outcome=ok expected="0" actual="0"
+    reqtrace_test.go:147: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=4 elapsed_ms=4 level=ASSERT name=no_missing_paths outcome=ok expected="0" actual="0"
+    reqtrace_test.go:155: STEPLOG package=internal/archtest_test test=TestReqTraceabilityPhaseExit idx=5 elapsed_ms=4 level=PHASE name=phase_exit outcome=ok detail=end
+--- PASS: TestReqTraceabilityPhaseExit (0.00s)
+PASS
+ok  	github.com/robertguss/go-foundry-cli/internal/archtest	0.009s

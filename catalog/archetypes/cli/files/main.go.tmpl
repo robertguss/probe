@@ -1,0 +1,26 @@
+// Package main is the process boundary for [[.Binary]].
+//
+// This file is the only permitted os.Exit site (Section 17.3 / REQ-064).
+package main
+
+import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"[[.Module]]/internal/cli"
+)
+
+func main() {
+	// Single signal owner for cancellation (Section 17.3): SIGINT/SIGTERM.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	code := cli.Run(ctx, os.Args[1:], cli.Streams{
+		In:  os.Stdin,
+		Out: os.Stdout,
+		Err: os.Stderr,
+	})
+	os.Exit(code)
+}

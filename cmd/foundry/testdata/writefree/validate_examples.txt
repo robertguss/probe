@@ -1,0 +1,43 @@
+# Write-free e2e: validate against examples/ + Appendix B fixtures.
+
+# Product minimal CLI — Phase 1 green path.
+exec foundry validate --spec examples/minimal-cli.toml
+stdout 'validate: ok'
+stdout 'plan_sha256='
+! stderr .
+dump_digest stdout
+
+# Minimal TUI — shape-valid; P1 accepts full plan success (TUI in catalog).
+exec foundry validate --spec examples/minimal-tui.toml
+stdout 'validate: ok'
+stdout 'plan_sha256='
+! stderr .
+
+# Appendix B private CLI / TUI.
+exec foundry validate --spec examples/appendix-b-private-cli.toml
+stdout 'validate: ok'
+! stderr .
+exec foundry validate --spec examples/appendix-b-private-tui.toml
+stdout 'validate: ok'
+! stderr .
+
+# Public CLI + distribution profile is selectable in Phase 4.
+exec foundry validate --spec examples/appendix-b-public-cli.toml
+stdout 'validate: ok'
+stdout 'plan_sha256='
+! stderr .
+
+# Specs exported by d0i (process fixtures mirror examples).
+exec foundry validate --spec specs/valid/minimal-cli.toml
+stdout 'validate: ok'
+! stderr .
+exec foundry validate --spec specs/valid/appendix-b-private-cli.toml
+stdout 'validate: ok'
+! stderr .
+
+# JSON success envelope carries plan_sha256.
+exec foundry validate --spec examples/minimal-cli.toml --output json
+stdout '"ok":true'
+stdout '"command":"validate"'
+stdout '"plan_sha256"'
+! stderr .

@@ -1,0 +1,72 @@
+package tui
+
+import (
+	"charm.land/bubbles/v2/help"
+	tea "charm.land/bubbletea/v2"
+)
+
+// Minimum terminal dimensions for a usable shell (Section 18.4).
+// Below these, View renders a deterministic "terminal too small" notice.
+const (
+	MinWidth  = 40
+	MinHeight = 8
+)
+
+// ModelConfig constructs the single model type (Section 18.4).
+type ModelConfig struct {
+	// Cancel is the application cancel function owned by main (context.CancelFunc).
+	Cancel  func()
+	NoColor bool
+	Name    string
+}
+
+// Model is the single Bubble Tea model for the minimal shell (Section 18.4).
+// Typed messages and effects appear only when the first real asynchronous
+// feature needs them — this shell has neither effects.go nor messages.go.
+type Model struct {
+	cancel  func()
+	noColor bool
+	name    string
+
+	width  int
+	height int
+
+	keys      KeyMap
+	help      help.Model
+	quitClass QuitClass
+}
+
+// NewModel builds the initial model bound to the lifecycle cancel function.
+func NewModel(cfg ModelConfig) *Model {
+	name := cfg.Name
+	if name == "" {
+		name = "[[.Name]]"
+	}
+	h := help.New()
+	if cfg.NoColor {
+		h.Styles = help.DefaultStyles(false)
+	}
+	return &Model{
+		cancel:  cfg.Cancel,
+		noColor: cfg.NoColor,
+		name:    name,
+		width:   80,
+		height:  24,
+		keys:    DefaultKeyMap(),
+		help:    h,
+	}
+}
+
+// QuitClass returns the deliberate quit classification, if any.
+func (m *Model) QuitClass() QuitClass { return m.quitClass }
+
+// Init implements tea.Model. The shell has no asynchronous work (FND-014).
+func (m *Model) Init() tea.Cmd {
+	return nil
+}
+
+func (m *Model) invokeCancel() {
+	if m.cancel != nil {
+		m.cancel()
+	}
+}

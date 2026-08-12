@@ -1,0 +1,39 @@
+date: 2026-07-31T11:21:18Z
+hostname: sjc22-bt149-8a7414a7-0f58-4bb1-8553-29fa2ab4269e-46E2D4A31E52.local
+uname: Darwin sjc22-bt149-8a7414a7-0f58-4bb1-8553-29fa2ab4269e-46E2D4A31E52.local 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:26:00 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_VMAPPLE arm64
+sw_vers:
+  ProductName:		macOS
+  ProductVersion:		26.5.2
+  BuildVersion:		25F84
+go: go version go1.26.5 darwin/arm64
+x/sys: golang.org/x/sys v0.47.0
+E1_FS_ROOTS=apfs:/private/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/e1-apfs.9YyvW6qqfM
+work: /private/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/e1-apfs.9YyvW6qqfM
+df:
+  Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+  /dev/disk3s5   320Gi   203Gi    97Gi    68%    1.8M  1.0G    0%   /System/Volumes/Data
+mount:
+  /dev/disk3s1s1 on / (apfs, sealed, local, read-only, journaled)
+  /dev/disk3s6 on /System/Volumes/VM (apfs, local, noexec, journaled, noatime, nobrowse)
+  /dev/disk3s2 on /System/Volumes/Preboot (apfs, local, journaled, nobrowse)
+  /dev/disk3s4 on /System/Volumes/Update (apfs, local, journaled, nobrowse)
+  /dev/disk1s2 on /System/Volumes/xarts (apfs, local, noexec, journaled, noatime, nobrowse)
+  /dev/disk1s1 on /System/Volumes/iSCPreboot (apfs, local, journaled, nobrowse)
+  /dev/disk1s3 on /System/Volumes/Hardware (apfs, local, journaled, nobrowse)
+  /dev/disk3s5 on /System/Volumes/Data (apfs, local, journaled, nobrowse, root data)
+  /dev/disk5s1 on /System/Library/AssetsV2/com_apple_MobileAsset_UAF_Siri_Understanding/purpose_auto/c10eb90af2d4996616c3cd0f6bac0833eb4925fa.asset/.AssetData (apfs, sealed, local, read-only, journaled, nobrowse)
+  /dev/disk7s1 on /System/Library/AssetsV2/com_apple_MobileAsset_PKITrustStore/purpose_auto/6dd55b0d06633a00de6f57ccb910a66a5ba2409a.asset/.AssetData (apfs, sealed, local, read-only, journaled, nobrowse)
+diskutil info / (filesystem):
+     Volume Name:               Macintosh HD
+     Mounted:                   Yes
+     File System Personality:   APFS
+     Type (Bundle):             apfs
+     Name (User Visible):       APFS
+     This disk is an APFS Volume Snapshot.  APFS Information:
+     APFS Snapshot Name:        com.apple.os.update-5B92CE4BA1034457A0921532291F4A4AD939CBE48D3A1381163A9AD3687D5694
+     APFS Snapshot UUID:        4D4917E3-328B-4AF1-8C61-B3D7E7E4C5F6
+     APFS Container:            disk3
+     APFS Physical Store:       disk0s2
+     APFS Volume Group:         69C0B70E-4083-4D44-A379-19D9F0AAF36A
+     APFS Snapshots are defined upon this APFS Volume.  Snapshot list:
+rename_adapter: commit_darwin.go exclusiveRename -> RenameatxNp(RENAME_EXCL|RENAME_NOFOLLOW_ANY)

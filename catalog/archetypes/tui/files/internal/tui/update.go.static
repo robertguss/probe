@@ -1,0 +1,41 @@
+package tui
+
+import (
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+)
+
+// Update is the sole state-transition site (Section 18.4 / REQ-069).
+//
+// Normative quit pattern (Section 18.3 #4): cancel application context BEFORE
+// returning tea.Quit / tea.Interrupt so future cooperative effects observe
+// cancellation promptly.
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.help.SetWidth(msg.Width)
+		return m, nil
+
+	case tea.KeyPressMsg:
+		switch {
+		case key.Matches(msg, m.keys.Quit):
+			// Deliberate user quit → exit 0.
+			m.quitClass = QuitClassQKey
+			m.invokeCancel()
+			return m, tea.Quit
+
+		case key.Matches(msg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
+			return m, nil
+
+		case msg.String() == "ctrl+c":
+			// Ctrl-C delivered as a key event inside the program → exit 130.
+			m.quitClass = QuitClassCtrlCKey
+			m.invokeCancel()
+			return m, tea.Interrupt
+		}
+	}
+	return m, nil
+}

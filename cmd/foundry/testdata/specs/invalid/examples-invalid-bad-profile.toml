@@ -1,0 +1,12 @@
+# Intentional failure for negative e2e / agent tests.
+# Expected error id: resolve.unknown_profile
+# Cause: `configuration` is a recipe topic, not a profile ID (Section 14.3 / 21).
+# Available set in MVP is empty; every non-empty profiles value is rejected
+# until post-MVP `distribution` ships. Error names the sorted available set.
+schema = 1
+name = "invalid-bad-profile"
+module = "github.com/example/invalid-bad-profile"
+description = "Spec with an unimplemented / non-profile ID in profiles"
+archetype = "cli"
+destination = "./invalid-bad-profile"
+profiles = ["configuration"]

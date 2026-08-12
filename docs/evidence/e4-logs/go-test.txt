@@ -1,0 +1,144 @@
+=== RUN   TestE4_QuitKey_ZeroEffects
+=== PAUSE TestE4_QuitKey_ZeroEffects
+=== RUN   TestE4_CtrlCKey_Exit130
+=== PAUSE TestE4_CtrlCKey_Exit130
+=== RUN   TestE4_ContextCancel_SIGINTPath
+=== PAUSE TestE4_ContextCancel_SIGINTPath
+=== RUN   TestE4_SIGTERMPath
+=== PAUSE TestE4_SIGTERMPath
+=== RUN   TestE4_StartupFailure_Exit1
+=== PAUSE TestE4_StartupFailure_Exit1
+=== RUN   TestE4_EffectError_ZeroEffects
+=== PAUSE TestE4_EffectError_ZeroEffects
+=== RUN   TestE4_FrameworkPanic_Recovered
+=== PAUSE TestE4_FrameworkPanic_Recovered
+=== RUN   TestE4_StaticOptions
+E4PROBE	os=linux arch=amd64 probe=static step=options args="files=10" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="" exit_code=0 quit_class="" detail="WithContext=present; WithoutSignalHandler=present; WithoutCatchPanics=absent(ok)"
+    lifecycle_test.go:438: static: WithContext=present; WithoutSignalHandler=present; WithoutCatchPanics=absent(ok) scanned=[main.go doc.go effects.go lifecycle.go log.go model.go static.go termios_bsd.go termios_linux.go termios_unix.go]
+--- PASS: TestE4_StaticOptions (0.01s)
+=== RUN   TestE4_RunHelper_Integration
+=== PAUSE TestE4_RunHelper_Integration
+=== RUN   TestE4_RequiredOptions_Order
+--- PASS: TestE4_RequiredOptions_Order (0.01s)
+=== RUN   TestE4_MapExitCode_Table
+=== PAUSE TestE4_MapExitCode_Table
+=== RUN   TestE4_PTY_RestoreOnQuit
+E4PROBE	os=linux arch=amd64 probe=pty-quit step=during_raw args="" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="" exit_code=0 quit_class="" detail="iflag=0x0 oflag=0x4 cflag=0xbf lflag=0xa30 cooked=false"
+E4PROBE	os=linux arch=amd64 probe=pty-quit step=return args="" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="restored" exit_code=0 quit_class="q" detail="before=iflag=0x500 oflag=0x5 cflag=0xbf lflag=0x8a3b cooked=true after=iflag=0x500 oflag=0x5 cflag=0xbf lflag=0x8a3b cooked=true alt_exit=false out_len=0"
+--- PASS: TestE4_PTY_RestoreOnQuit (0.01s)
+=== RUN   TestE4_PTY_RestoreOnContextCancel
+E4PROBE	os=linux arch=amd64 probe=pty-signal step=return args="" errno=program was killed: context canceled outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="restored" exit_code=130 quit_class="signal" detail="before=iflag=0x500 oflag=0x5 cflag=0xbf lflag=0x8a3b cooked=true after=iflag=0x500 oflag=0x5 cflag=0xbf lflag=0x8a3b cooked=true"
+--- PASS: TestE4_PTY_RestoreOnContextCancel (0.01s)
+=== RUN   TestE4_PTY_RestoreOnPanic
+Caught panic:
+
+e4 spike: framework-recovered panic probe
+
+Restoring terminal...
+
+goroutine 71 [running]:
+runtime/debug.Stack()
+	/home/rob/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.5.linux-amd64/src/runtime/debug/stack.go:26 +0x5e
+charm.land/bubbletea/v2.(*Program).recoverFromPanic(0x66376f91680, {0x610f00, 0x67f530})
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:1279 +0x151
+charm.land/bubbletea/v2.(*Program).Run.func2()
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:1030 +0x10c
+panic({0x610f00?, 0x67f530?})
+	/home/rob/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.5.linux-amd64/src/runtime/panic.go:860 +0x13a
+github.com/robertguss/go-foundry-cli/integration/hostile/e4.(*SpikeModel).Update(0x66376ed1500, {0x6204e0?, 0x8f2f60?})
+	/home/rob/projects/go-foundry-cli/integration/hostile/e4/model.go:145 +0x28e
+charm.land/bubbletea/v2.(*Program).eventLoop(0x66376f91680, {0x6827a0?, 0x66376ed1500?}, 0x66376e853b0)
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:872 +0xe46
+charm.land/bubbletea/v2.(*Program).Run(0x66376f91680)
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:1144 +0xab0
+github.com/robertguss/go-foundry-cli/integration/hostile/e4.TestE4_PTY_RestoreOnPanic.func1()
+	/home/rob/projects/go-foundry-cli/integration/hostile/e4/pty_test.go:279 +0x26
+created by github.com/robertguss/go-foundry-cli/integration/hostile/e4.TestE4_PTY_RestoreOnPanic in goroutine 69
+	/home/rob/projects/go-foundry-cli/integration/hostile/e4/pty_test.go:278 +0x53a
+
+E4PROBE	os=linux arch=amd64 probe=pty-panic step=return args="" errno=program was killed: program experienced a panic outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="restored" exit_code=1 quit_class="framework-recovered-panic" detail="before=iflag=0x500 oflag=0x5 cflag=0xbf lflag=0x8a3b cooked=true after=iflag=0x500 oflag=0x5 cflag=0xbf lflag=0x8a3b cooked=true"
+--- PASS: TestE4_PTY_RestoreOnPanic (0.51s)
+=== RUN   TestE4_Subprocess_RealSignals
+=== RUN   TestE4_Subprocess_RealSignals/SIGINT
+E4PROBE	os=linux arch=amd64 probe=subprocess-SIGINT step=return args="" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="subprocess-exited" exit_code=130 quit_class="signal" detail="signal=interrupt wait_err=exit status 130"
+=== RUN   TestE4_Subprocess_RealSignals/SIGTERM
+E4PROBE	os=linux arch=amd64 probe=subprocess-SIGTERM step=return args="" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="subprocess-exited" exit_code=130 quit_class="signal" detail="signal=terminated wait_err=exit status 130"
+--- PASS: TestE4_Subprocess_RealSignals (0.71s)
+    --- PASS: TestE4_Subprocess_RealSignals/SIGINT (0.13s)
+    --- PASS: TestE4_Subprocess_RealSignals/SIGTERM (0.14s)
+=== RUN   TestE4_Subprocess_QuitKey
+E4PROBE	os=linux arch=amd64 probe=subprocess-q step=return args="" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="subprocess-exited" exit_code=0 quit_class="q" detail="wait_err=<nil>"
+--- PASS: TestE4_Subprocess_QuitKey (0.46s)
+=== CONT  TestE4_QuitKey_ZeroEffects
+=== CONT  TestE4_EffectError_ZeroEffects
+E4PROBE	os=linux arch=amd64 probe=lifecycle step=construct args="options=WithContext,WithoutSignalHandler" errno= outcome=info active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="" exit_code=0 quit_class="" detail="tea.WithContext(appCtx)+tea.WithoutSignalHandler(); panic recovery default ON"
+E4PROBE	os=linux arch=amd64 probe=lifecycle step=return args="" errno=program was killed: context canceled outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="unchecked" exit_code=1 quit_class="effect-error" detail="run_err=program was killed: context canceled idle=true started=1 finished=1"
+--- PASS: TestE4_EffectError_ZeroEffects (0.00s)
+=== CONT  TestE4_StartupFailure_Exit1
+E4PROBE	os=linux arch=amd64 probe=lifecycle step=startup_failure args="" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="n/a" exit_code=1 quit_class="startup-failure" detail="invalid --debug-log basename"
+E4PROBE	os=linux arch=amd64 probe=startup step=assert args="" errno= outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="n/a" exit_code=1 quit_class="startup-failure" detail=""
+--- PASS: TestE4_StartupFailure_Exit1 (0.00s)
+=== CONT  TestE4_SIGTERMPath
+E4PROBE	os=linux arch=amd64 probe=q step=pre_quit args="" errno= outcome=info active_effects=1 signal_owner="main.signal.NotifyContext" pty_restore="" exit_code=0 quit_class="" detail="effect in-flight before q"
+E4PROBE	os=linux arch=amd64 probe=sigterm-cancel step=return args="" errno=program was killed: context canceled outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="n/a" exit_code=130 quit_class="signal" detail="SIGTERM→NotifyContext cancel identical to SIGINT path"
+--- PASS: TestE4_SIGTERMPath (0.01s)
+=== CONT  TestE4_ContextCancel_SIGINTPath
+E4PROBE	os=linux arch=amd64 probe=q step=return args="" errno=program was killed: context canceled outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="n/a" exit_code=0 quit_class="q" detail="want exit=0 class=q active=0; got exit=0 class=q active=0 run_err=program was killed: context canceled"
+--- PASS: TestE4_QuitKey_ZeroEffects (0.01s)
+=== CONT  TestE4_CtrlCKey_Exit130
+E4PROBE	os=linux arch=amd64 probe=signal-cancel step=return args="" errno=program was killed: context canceled outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="n/a" exit_code=130 quit_class="signal" detail="NotifyContext cancel → ErrProgramKilled+context.Canceled → exit 130"
+--- PASS: TestE4_ContextCancel_SIGINTPath (0.01s)
+=== CONT  TestE4_FrameworkPanic_Recovered
+E4PROBE	os=linux arch=amd64 probe=ctrl+c-key step=return args="" errno=program was killed: context canceled outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="n/a" exit_code=130 quit_class="ctrl+c-key" detail="want exit=130 class=ctrl+c-key active=0; got exit=130 class=ctrl+c-key active=0"
+--- PASS: TestE4_CtrlCKey_Exit130 (0.01s)
+=== CONT  TestE4_MapExitCode_Table
+=== RUN   TestE4_MapExitCode_Table/q
+=== RUN   TestE4_MapExitCode_Table/q-killed-race
+=== RUN   TestE4_MapExitCode_Table/ctrlc
+=== RUN   TestE4_MapExitCode_Table/signal
+=== RUN   TestE4_MapExitCode_Table/panic
+=== RUN   TestE4_MapExitCode_Table/startup
+=== RUN   TestE4_MapExitCode_Table/effect
+--- PASS: TestE4_MapExitCode_Table (0.00s)
+    --- PASS: TestE4_MapExitCode_Table/q (0.00s)
+    --- PASS: TestE4_MapExitCode_Table/q-killed-race (0.00s)
+    --- PASS: TestE4_MapExitCode_Table/ctrlc (0.00s)
+    --- PASS: TestE4_MapExitCode_Table/signal (0.00s)
+    --- PASS: TestE4_MapExitCode_Table/panic (0.00s)
+    --- PASS: TestE4_MapExitCode_Table/startup (0.00s)
+    --- PASS: TestE4_MapExitCode_Table/effect (0.00s)
+=== CONT  TestE4_RunHelper_Integration
+E4PROBE	os=linux arch=amd64 probe=lifecycle step=construct args="options=WithContext,WithoutSignalHandler" errno= outcome=info active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="" exit_code=0 quit_class="" detail="tea.WithContext(appCtx)+tea.WithoutSignalHandler(); panic recovery default ON"
+Caught panic:
+
+e4 spike: framework-recovered panic probe
+
+Restoring terminal...
+
+goroutine 161 [running]:
+runtime/debug.Stack()
+	/home/rob/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.5.linux-amd64/src/runtime/debug/stack.go:26 +0x5e
+charm.land/bubbletea/v2.(*Program).recoverFromPanic(0x663770dba40, {0x610f00, 0x67f530})
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:1279 +0x151
+charm.land/bubbletea/v2.(*Program).Run.func2()
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:1030 +0x10c
+panic({0x610f00?, 0x67f530?})
+	/home/rob/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.5.linux-amd64/src/runtime/panic.go:860 +0x13a
+github.com/robertguss/go-foundry-cli/integration/hostile/e4.(*SpikeModel).Update(0x66376ed1d50, {0x6204e0?, 0x8f2f60?})
+	/home/rob/projects/go-foundry-cli/integration/hostile/e4/model.go:145 +0x28e
+charm.land/bubbletea/v2.(*Program).eventLoop(0x663770dba40, {0x6827a0?, 0x66376ed1d50?}, 0x66376e85a40)
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:872 +0xe46
+charm.land/bubbletea/v2.(*Program).Run(0x663770dba40)
+	/home/rob/go/pkg/mod/charm.land/bubbletea/v2@v2.0.8/tea.go:1144 +0xab0
+github.com/robertguss/go-foundry-cli/integration/hostile/e4.TestE4_FrameworkPanic_Recovered.func1()
+	/home/rob/projects/go-foundry-cli/integration/hostile/e4/lifecycle_test.go:371 +0x26
+created by github.com/robertguss/go-foundry-cli/integration/hostile/e4.TestE4_FrameworkPanic_Recovered in goroutine 27
+	/home/rob/projects/go-foundry-cli/integration/hostile/e4/lifecycle_test.go:370 +0x413
+
+E4PROBE	os=linux arch=amd64 probe=lifecycle step=return args="" errno=program was killed: context canceled outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="unchecked" exit_code=130 quit_class="signal" detail="run_err=program was killed: context canceled idle=true started=0 finished=0"
+--- PASS: TestE4_RunHelper_Integration (0.01s)
+E4PROBE	os=linux arch=amd64 probe=panic step=return args="" errno=program was killed: program experienced a panic outcome=pass active_effects=0 signal_owner="main.signal.NotifyContext" pty_restore="n/a-buffer" exit_code=1 quit_class="framework-recovered-panic" detail="framework recovered panic; WithoutCatchPanics not used; owner cancelled effects"
+--- PASS: TestE4_FrameworkPanic_Recovered (0.01s)
+PASS
+ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e4	1.734s
+EXIT:0

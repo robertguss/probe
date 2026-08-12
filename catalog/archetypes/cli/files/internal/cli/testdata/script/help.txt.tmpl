@@ -1,0 +1,19 @@
+# Process test: root help (no subcommand) and --help (Section 17.4 / 17.7).
+# Binary is registered in-process by script_test.go TestMain.
+
+# No subcommand → deterministic help, exit 0.
+exec [[.Binary]]
+stdout '[[.Binary]]'
+stdout 'version'
+! stderr .
+
+# Explicit --help.
+exec [[.Binary]] --help
+stdout 'Usage:'
+stdout '[[.Binary]]'
+! stderr .
+
+# Hidden completion and help must not appear under Available Commands.
+! stdout 'completion'
+# Available Commands rows look like "\n  help "; do not match Flags "-h, --help".
+! stdout '\n  help '

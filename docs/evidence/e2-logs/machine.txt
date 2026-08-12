@@ -1,0 +1,11 @@
+hostname=dev-box
+date_utc=2026-07-30T20:54:58Z
+uname=Linux dev-box 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+os_release=Ubuntu 24.04.4 LTS
+go=go version go1.26.5 linux/amd64
+git=git version 2.43.0
+arch=x86_64
+go_bin=/home/rob/.local/share/mise/installs/go/1.26.4/bin/go
+git_bin=/usr/bin/git
+GOROOT=/home/rob/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.5.linux-amd64
+GOENV_host=/home/rob/.config/go/env

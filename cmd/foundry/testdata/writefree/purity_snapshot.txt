@@ -1,0 +1,33 @@
+# Write-free e2e: purity snapshot — write-free commands create no destination files.
+
+# Sentinel starts with marker only.
+snapshot_tree sentinel sentinel_before.txt
+
+# version / catalog — embedded only; no project writes.
+exec foundry version
+exec foundry version --output json
+exec foundry catalog list
+exec foundry catalog show core
+exec foundry catalog show cli --output json
+
+# validate + plan with dest under $WORK/out (Lstat observation only).
+mkdir out
+snapshot_tree out out_before.txt
+exec foundry validate --spec examples/minimal-cli.toml --dest ./out/minimal-cli
+stdout 'validate: ok'
+exec foundry plan --spec examples/minimal-cli.toml --dest ./out/minimal-cli --output json
+stdout '"ok":true'
+! exists out/minimal-cli
+assert_tree_unchanged out out_before.txt
+
+# generate pure-path refusal (basename≠name) still pure under out/ and sentinel/.
+! exec foundry generate --spec examples/minimal-cli.toml --dest ./out/from-generate
+! exists out/from-generate
+assert_tree_unchanged out out_before.txt
+
+! exec foundry generate --spec examples/minimal-cli.toml --dest ./sentinel/from-generate
+! exists sentinel/from-generate
+assert_tree_unchanged sentinel sentinel_before.txt
+
+list_tree out
+list_tree sentinel

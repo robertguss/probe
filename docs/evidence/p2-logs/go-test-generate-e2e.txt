@@ -1,0 +1,1 @@
+ok  	github.com/robertguss/go-foundry-cli/integration/generate	140.803s

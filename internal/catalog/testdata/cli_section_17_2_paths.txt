@@ -1,0 +1,12 @@
+# Section 17.2 CLI-archetype output paths (token form; {{binary}} expanded at plan).
+# Core-owned paths (Section 16.2) are asserted by P2.6.b (a77), not this golden.
+# Sorted lexicographically. go.mod is typed gomod (not a catalog file entry).
+cmd/{{binary}}/main.go
+internal/cli/completion.go
+internal/cli/root.go
+internal/cli/root_test.go
+internal/cli/script_test.go
+internal/cli/testdata/script/completion.txt
+internal/cli/testdata/script/help.txt
+internal/cli/testdata/script/version.txt
+internal/cli/version.go

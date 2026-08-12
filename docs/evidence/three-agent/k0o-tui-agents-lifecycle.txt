@@ -1,0 +1,6 @@
+### Single lifecycle owner (TUI)
+
+`cmd/foundry-smoke-tui/main.go` is the **only** signal/cancellation owner:
+`signal.NotifyContext` + `tea.WithContext` + `tea.WithoutSignalHandler`.
+Quit paths cancel before `tea.Quit`. Exit mapping: `q`→0, signal/Ctrl-C→130,
+failure→1. Full rules: `docs/ui-architecture.md`. Startup flags are exactly

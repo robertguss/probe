@@ -1,0 +1,14 @@
+# Core inventory path golden (Section 16.2 / REQ-060–063).
+# Sorted lexicographically. go.mod/go.sum are not catalog [[files]] entries.
+# Update when the Core catalog tree changes (bead go-foundry-cli-a77).
+.github/dependabot.yml
+.github/workflows/ci.yml
+.github/workflows/strict.yml
+.gitignore
+AGENTS.md
+README.md
+docs/architecture.md
+docs/commands.md
+docs/testing.md
+internal/version/version.go
+internal/version/version_test.go

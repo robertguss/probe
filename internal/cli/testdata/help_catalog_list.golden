@@ -1,0 +1,26 @@
+catalog list prints every validated unit in the embedded catalog sorted by id
+(including core, archetypes, and catalogued profiles such as distribution).
+
+Catalog presence is not the same as generation-ready selection: the only
+selectable optional profile is distribution (Phase 4), which requires
+visibility=public and a github.com/<owner>/<name> module path. Recipes
+(configuration, local-persistence) are never generation-selectable.
+
+Write-free: no network, no filesystem writes, no subprocesses. Output is
+derived only from the embedded catalog.
+
+Examples:
+  foundry catalog list
+  foundry catalog list --output json
+
+Usage:
+  foundry catalog list [flags]
+
+Flags:
+  -h, --help   help for list
+
+Global Flags:
+      --color string    color mode: auto|always|never (text mode only) (default "auto")
+      --output string   output mode: text|json (default "text")
+      --quiet           suppress non-essential human output (text mode only)
+      --verbose         diagnostic detail on stderr (text mode only)

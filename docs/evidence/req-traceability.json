@@ -1,0 +1,2366 @@
+{
+  "version": 1,
+  "authority": "docs/02-definitive-foundry-specification-revised-fable-5.md \u00a753 / \u00a754 / \u00a759 DoD#2",
+  "bead": "go-foundry-cli-dlv.1",
+  "seeded": "2026-07-30",
+  "last_update": "2026-08-01",
+  "status_enum": [
+    "planned",
+    "implemented",
+    "verified"
+  ],
+  "protocol": {
+    "seed": "After scaffold (zhm): all 125 REQs listed with owning beads + planned tests (status planned or implemented where tests already exist).",
+    "package_completion": "Implementers set status=implemented and fill concrete test paths when package work lands.",
+    "phase_exit": "Exit reviews 0z4/5pr/66w/7fm hard-block on dlv.1; exit evidence must cite matrix slice with verified rows for that phase's REQs. Checker: FOUNDRY_MATRIX_PHASE_EXIT=P1|P2|P3|P4|S6|DoD",
+    "dod": "Never close 7fm with planned rows remaining. FOUNDRY_MATRIX_PHASE_EXIT=DoD fails if any non-verified row remains. Status TBD is forbidden.",
+    "authority": "Matrix is DoD#2 artifact only; SPEC-FOUNDRY-002 wins on conflict."
+  },
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-5an",
+        "go-foundry-cli-j8h",
+        "go-foundry-cli-vu8"
+      ],
+      "tests": [
+        "cmd/foundry/writefree_e2e_test.go",
+        "cmd/foundry/testdata/writefree/",
+        "examples/",
+        "docs/dev/product-e2e-plan.md",
+        "integration/dogfood/product_matrix_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "The Foundry MUST be a personal, repository-first tool creating brand-new Go application repositories, optimized first for the owner's macOS/Linux workflow.",
+      "spec_verification": "Specification inspection; end-to-end generation tests; dogfood repositories"
+    },
+    {
+      "id": "REQ-002",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-zhm",
+        "go-foundry-cli-j1m",
+        "go-foundry-cli-wkz"
+      ],
+      "tests": [
+        "go.mod",
+        "catalog/versions.toml",
+        "integration/hostile/e5/lock_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry MUST be implemented in Go, and every Generated Project MUST be a single-module Go repository pinned `go 1.26.0` / `toolchain go1.26.5` in catalog v1",
+      "spec_verification": "Compilation of Foundry and every golden project with the pinned toolchain"
+    },
+    {
+      "id": "REQ-003",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-2fe",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-j8h.2"
+      ],
+      "tests": [
+        "internal/fsx/destination_test.go",
+        "cmd/foundry/testdata/generate/preexisting_dest.txt",
+        "integration/generate/matrix_failure_test.go",
+        "integration/generate/conflict_test.go",
+        "integration/dogfood/product_matrix_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "The Foundry MUST NOT modify, merge into, upgrade, synchronize, migrate, or add profiles to any existing project or existing destination.",
+      "spec_verification": "Destination-refusal tests: existing file/dir/symlink/repo/empty dir all fail before staging"
+    },
+    {
+      "id": "REQ-004",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-ig3",
+        "go-foundry-cli-x7b",
+        "go-foundry-cli-cic"
+      ],
+      "tests": [
+        "integration/hostile/e3/e3_test.go",
+        "integration/hostile/e3/preflight_test.go",
+        "integration/hostile/e3/knownrace/race_test.go",
+        "go.mod"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Supported platforms are macOS and Linux only. Product, generated, analysis, and release builds MUST use `CGO_ENABLED=0`; the race detector is the sole exception",
+      "spec_verification": "Release-matrix build inspection; preflighted race jobs; known-race fixture"
+    },
+    {
+      "id": "REQ-005",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-jr7"
+      ],
+      "tests": [
+        "internal/resolve/resolve_test.go",
+        "internal/catalog/catalog_test.go",
+        "internal/plan/golden_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Every Generated Project MUST have exactly one Project Archetype, one primary interaction model, and one primary binary; no helper binary exists in schema 1.",
+      "spec_verification": "Resolver tests; catalog inspection; generated tree goldens"
+    },
+    {
+      "id": "REQ-006",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-wly",
+        "go-foundry-cli-j8h.2"
+      ],
+      "tests": [
+        "internal/render/gomod_test.go",
+        "integration/fixtures/smoke_cli_test.go",
+        "integration/dogfood/smoke_test.go",
+        "cmd/foundry/testdata/generate/success_default.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Generated Projects MUST have no runtime, build, or toolchain dependency on the Foundry and MUST remain fully usable if the Foundry disappears.",
+      "spec_verification": "Generated `go.mod` inspection; independent clone build/test"
+    },
+    {
+      "id": "REQ-007",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-80g",
+        "go-foundry-cli-5an.1",
+        "go-foundry-cli-8jp"
+      ],
+      "tests": [
+        "internal/cli/surface_test.go",
+        "cmd/foundry/testdata/writefree/stdin.txt",
+        "cmd/foundry/writefree_e2e_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry MUST operate non-interactively (no prompts, no terminal reads beyond explicit `--spec -`) and MUST support optional isolated `git init` as its only ",
+      "spec_verification": "Non-interactive process tests; Git behavior tests (Section 39)"
+    },
+    {
+      "id": "REQ-008",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-4hi",
+        "go-foundry-cli-5an.1",
+        "go-foundry-cli-2y7"
+      ],
+      "tests": [
+        "internal/archtest/redline_test.go",
+        "internal/archtest/quality_test.go",
+        "cmd/foundry/testdata/writefree/purity_snapshot.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry MUST NOT call any GitHub API; GitHub interaction belongs exclusively to generated workflow files and documented owner steps.",
+      "spec_verification": "Static import/network audit; process tests on network-disabled hosts"
+    },
+    {
+      "id": "REQ-009",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-a77",
+        "go-foundry-cli-k0o"
+      ],
+      "tests": [
+        "catalog/core/files/AGENTS.md.tmpl",
+        "internal/catalog/core_tree_test.go",
+        "docs/evidence/three-agent-acceptance.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Every Generated Project MUST carry the portable agent instruction contract: `AGENTS.md` as single agent authority with canonical commands, architecture map, and",
+      "spec_verification": "Generated docs inspection; three-agent acceptance scenarios (Section 52.3)"
+    },
+    {
+      "id": "REQ-010",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-j8h.4",
+        "go-foundry-cli-wly",
+        "go-foundry-cli-sui"
+      ],
+      "tests": [
+        "internal/cli/plan_generate_equality_test.go",
+        "integration/fixtures/plan_generate_equality_test.go",
+        "integration/generate/matrix_success_test.go",
+        "internal/verify/verify_test.go",
+        "cmd/foundry/testdata/generate/double_generation.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Generation MUST be deterministic within the Section 32.1 envelope and strict: verification failures fail generation; there is no non-strict emit mode.",
+      "spec_verification": "Double-generation byte equality; verification-failure tests"
+    },
+    {
+      "id": "REQ-011",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-s45",
+        "go-foundry-cli-w4n",
+        "go-foundry-cli-chf"
+      ],
+      "tests": [
+        "internal/catalog/catalog_test.go",
+        "internal/resolve/resolve_test.go",
+        "cmd/foundry/testdata/writefree/catalog.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Catalog v1.0 MUST contain exactly the `cli` and `tui` archetypes and exactly one optional profile, `distribution`, implemented post-MVP; the MVP implements no o",
+      "spec_verification": "`catalog list` golden; MVP acceptance with `profiles = []`"
+    },
+    {
+      "id": "REQ-012",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-2y7",
+        "go-foundry-cli-4hi",
+        "go-foundry-cli-c6b"
+      ],
+      "tests": [
+        "internal/archtest/redline_test.go",
+        "docs/evidence/section-58-redlines.md",
+        "internal/cli/surface_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry MUST NOT implement plugins, remote catalogs, template downloads, profile scripts, self-update, project upgrade/sync, interactive wizards, or a daemo",
+      "spec_verification": "Command-surface tests; static audit; Section 58 register"
+    },
+    {
+      "id": "REQ-030",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-c6b",
+        "go-foundry-cli-80g",
+        "go-foundry-cli-5an.1",
+        "go-foundry-cli-2y7"
+      ],
+      "tests": [
+        "internal/cli/surface_test.go",
+        "cmd/foundry/testdata/writefree/",
+        "internal/archtest/redline_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The command surface MUST be exactly `validate`, `plan`, `generate`, `catalog list`, `catalog show`, `version` with global flags `--output text\\|json`, `--quiet`",
+      "spec_verification": "Help/usage goldens; flag-conflict rejection tests; no `offline` token in surface"
+    },
+    {
+      "id": "REQ-031",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-4hi",
+        "go-foundry-cli-5an.1",
+        "go-foundry-cli-80g"
+      ],
+      "tests": [
+        "internal/cli/surface_test.go",
+        "cmd/foundry/testdata/writefree/",
+        "internal/archtest/quality_test.go",
+        "cmd/foundry/writefree_e2e_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`generate` MUST be the only command that writes to the filesystem, starts subprocesses, or may use the network; all other commands MUST be proven write-, subpro",
+      "spec_verification": "Syscall/subprocess audit tests; network-disabled host runs"
+    },
+    {
+      "id": "REQ-032",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-6wj",
+        "go-foundry-cli-di6",
+        "go-foundry-cli-9a7",
+        "go-foundry-cli-d0i"
+      ],
+      "tests": [
+        "internal/spec/suite_test.go",
+        "internal/cli/pipeline_test.go",
+        "internal/plan/plan_test.go",
+        "cmd/foundry/testdata/writefree/validate_examples.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`validate` MUST execute the complete pure pipeline (parse, validate, resolve, plan construction, non-binding destination observation) through the same code path",
+      "spec_verification": "Table-driven validation tests over every error identifier; validate/plan single-code-path test"
+    },
+    {
+      "id": "REQ-033",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-6wj",
+        "go-foundry-cli-9a7",
+        "go-foundry-cli-j8h.4",
+        "go-foundry-cli-5an.1"
+      ],
+      "tests": [
+        "internal/plan/golden_test.go",
+        "internal/cli/pipeline_test.go",
+        "cmd/foundry/testdata/writefree/plan.txt",
+        "internal/cli/plan_generate_equality_test.go",
+        "integration/fixtures/plan_generate_equality_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "`plan` MUST be the authoritative dry run: it produces the complete Generation Plan without side effects, accepts `--verify` so the recorded step list matches ge",
+      "spec_verification": "Plan golden tests; plan/generate equality tests; absence-of-writes audit"
+    },
+    {
+      "id": "REQ-034",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-dd1",
+        "go-foundry-cli-j8h.3",
+        "go-foundry-cli-j8h.2",
+        "go-foundry-cli-ybi"
+      ],
+      "tests": [
+        "internal/generate/network_test.go",
+        "internal/generate/machine_test.go",
+        "internal/cli/generate_test.go",
+        "integration/generate/matrix_success_test.go",
+        "cmd/foundry/testdata/generate/success_default.txt",
+        "integration/generate/wrong_go_test.go",
+        "integration/dogfood/product_matrix_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "`generate` MUST execute exactly the plan (Section 29), disclose possible network steps before staging, and place output only through the Section 31 transaction.",
+      "spec_verification": "End-to-end generation tests; disclosure output goldens; process-tree audit"
+    },
+    {
+      "id": "REQ-035",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-11l",
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-5an.1"
+      ],
+      "tests": [
+        "internal/cli/catalog_test.go",
+        "internal/catalog/listshow_test.go",
+        "cmd/foundry/testdata/writefree/catalog.txt",
+        "internal/version/version_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`catalog list`/`catalog show` MUST render only embedded catalog metadata (including `core`); `version` MUST report version, commit, Go version, and catalog dige",
+      "spec_verification": "Output goldens against embedded catalog"
+    },
+    {
+      "id": "REQ-036",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-dd1",
+        "go-foundry-cli-nx1",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-j8h.2"
+      ],
+      "tests": [
+        "internal/generate/machine_test.go",
+        "internal/generate/state_test.go",
+        "internal/fsx/preserve_test.go",
+        "integration/generate/matrix_failure_test.go",
+        "internal/cli/generate_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry MUST own SIGINT/SIGTERM through one `signal.NotifyContext`; cancellation before any stage exists exits 130 with nothing on disk; cancellation after ",
+      "spec_verification": "Cancellation-injection tests at every lifecycle stage with exact no-stage/preserved-stage assertions; commit-race tests"
+    },
+    {
+      "id": "REQ-037",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-41p",
+        "go-foundry-cli-80g",
+        "go-foundry-cli-5an.1"
+      ],
+      "tests": [
+        "internal/report/encoder_test.go",
+        "internal/report/golden_test.go",
+        "cmd/foundry/testdata/writefree/flags.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`--output json` MUST emit exactly one stable versioned deterministic JSON document on stdout with empty stderr after flag recognition and identical exit codes t",
+      "spec_verification": "JSON schema tests; stream-separation and empty-stderr tests"
+    },
+    {
+      "id": "REQ-038",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-i8b",
+        "go-foundry-cli-d0i"
+      ],
+      "tests": [
+        "internal/spec/decode_test.go",
+        "internal/spec/suite_test.go",
+        "internal/spec/fuzz_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Project Specification MUST be one strict TOML document \u2264 1 MiB, UTF-8, canonically `foundry.toml`, that is input only and never copied into output.",
+      "spec_verification": "Parser tests incl. size/encoding limits"
+    },
+    {
+      "id": "REQ-039",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-d0i"
+      ],
+      "tests": [
+        "internal/spec/suite_test.go",
+        "internal/spec/decode_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The specification MUST contain exactly one top-level integer `schema = 1` whose physical position has no semantic effect; the field contract is exactly Section ",
+      "spec_verification": "Schema-position permutation tests; field-contract table tests"
+    },
+    {
+      "id": "REQ-040",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-i8b",
+        "go-foundry-cli-d0i"
+      ],
+      "tests": [
+        "internal/spec/decode_test.go",
+        "internal/spec/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Decoding MUST be strict: unknown fields/tables and duplicate keys are fatal with name and line/column; no interpolation, includes, environment references, or ex",
+      "spec_verification": "Hostile-input decoding tests"
+    },
+    {
+      "id": "REQ-041",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-5yn"
+      ],
+      "tests": [
+        "internal/spec/validate_test.go",
+        "internal/spec/suite_test.go",
+        "docs/02-definitive-foundry-specification-revised-fable-5.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The schema MUST define no credential/token/secret field, and documentation MUST direct secrets to runtime environment injection only.",
+      "spec_verification": "Schema inspection; docs inspection"
+    },
+    {
+      "id": "REQ-042",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-5yn",
+        "go-foundry-cli-d0i"
+      ],
+      "tests": [
+        "internal/spec/validate_test.go",
+        "internal/spec/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`name` MUST be lowercase ASCII kebab-case starting with a letter, 1\u201363 bytes, and MUST equal the destination basename; `binary` defaults to `name` with the same",
+      "spec_verification": "Name/description-validation table tests"
+    },
+    {
+      "id": "REQ-043",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-5yn",
+        "go-foundry-cli-d0i"
+      ],
+      "tests": [
+        "internal/spec/validate_test.go",
+        "internal/spec/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`module` MUST pass `golang.org/x/mod/module.CheckPath` with final segment equal to `name` and no semantic import-version suffix; ownership/reachability are not ",
+      "spec_verification": "Module-path validation tests incl. `/vN` rejection"
+    },
+    {
+      "id": "REQ-044",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-2fe",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-qd8"
+      ],
+      "tests": [
+        "internal/fsx/destination_test.go",
+        "internal/fsx/parent_test.go",
+        "internal/fsx/transaction_test.go",
+        "integration/hostile/e1/e1_test.go",
+        "integration/hostile/fsx/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The destination MUST satisfy Section 15.3, its parent MUST be acquired only by the no-follow component walk with a retained handle and the namespace-custody che",
+      "spec_verification": "Hostile-path suite; custody owner/mode/sticky matrix; parent-swap race tests; case-sensitivity matrix"
+    },
+    {
+      "id": "REQ-045",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-s45",
+        "go-foundry-cli-w4n"
+      ],
+      "tests": [
+        "internal/spec/validate_test.go",
+        "internal/resolve/resolve_test.go",
+        "internal/catalog/recipe_test.go",
+        "cmd/foundry/testdata/writefree/profiles.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`visibility` MUST be `private` (default) or `public`; `profiles` MUST list only exact implemented built-in IDs (none in the MVP; `distribution` post-MVP), with ",
+      "spec_verification": "Resolution error tests; MVP empty-profile acceptance"
+    },
+    {
+      "id": "REQ-046",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-5yn",
+        "go-foundry-cli-8jp"
+      ],
+      "tests": [
+        "internal/spec/validate_test.go",
+        "internal/spec/suite_test.go",
+        "internal/plan/schema_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`[git] init` (default true) and `[git] initial_branch` (default `main`, lowercase kebab-case) MUST be the only Git fields; everything after generation is the ow",
+      "spec_verification": "Field tests; generated-repo inspection"
+    },
+    {
+      "id": "REQ-060",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-a77",
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-wly"
+      ],
+      "tests": [
+        "internal/catalog/core_tree_test.go",
+        "internal/catalog/cli_tree_test.go",
+        "integration/fixtures/smoke_cli_test.go",
+        "integration/fixtures/testdata/foundry_smoke_cli_tree.golden"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Core MUST be exactly the Section 16.2 inventory: zero third-party runtime dependencies, no task runner, no `pkg/`/`util/`-style buckets, no license file, no pro",
+      "spec_verification": "Generated tree goldens; runtime-dependency audit"
+    },
+    {
+      "id": "REQ-061",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-a77",
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-jr7"
+      ],
+      "tests": [
+        "internal/catalog/core_tree_test.go",
+        "internal/catalog/cli_tree_test.go",
+        "integration/fixtures/smoke_cli_test.go",
+        "catalog/core/"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Generated documentation MUST follow Section 16.3 ownership: `AGENTS.md` is the single agent authority; `README.md`, `docs/architecture.md`, `docs/commands.md`, ",
+      "spec_verification": "Docs-ownership inspection tests; cross-file command-consistency checks"
+    },
+    {
+      "id": "REQ-062",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-a77",
+        "go-foundry-cli-cic"
+      ],
+      "tests": [
+        "internal/catalog/core_tree_test.go",
+        "internal/catalog/cli_tree_test.go",
+        "catalog/core/"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Canonical commands MUST be direct Go tool invocations documented identically in `AGENTS.md`, `docs/commands.md`, and CI, using `go test -count=1 ./...` and decl",
+      "spec_verification": "Command-consistency tests across docs and workflows"
+    },
+    {
+      "id": "REQ-063",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-a77",
+        "go-foundry-cli-cic"
+      ],
+      "tests": [
+        "internal/archtest/foundry_ci_test.go",
+        "docs/evidence/P3-ci-reduced-matrix.md",
+        "catalog/core/files/docs/testing.md.tmpl"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Generated Core CI MUST be exactly one required fast Linux PR/default job (format, mod verify, uncached tests, vet, Staticcheck; superseded-run cancellation) plu",
+      "spec_verification": "Generated workflow goldens; single-required-job assertion; dogfood latency metrics"
+    },
+    {
+      "id": "REQ-064",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-2gi",
+        "go-foundry-cli-wly"
+      ],
+      "tests": [
+        "internal/catalog/cli_tree_test.go",
+        "integration/fixtures/smoke_cli_test.go",
+        "integration/dogfood/smoke_test.go",
+        "integration/fixtures/foundry-smoke-cli/foundry.toml"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The generated CLI MUST match Section 17.2: a minimal working shell (root help, `version`, hidden completion) with thin `main.go`, single `os.Exit` site, and **n",
+      "spec_verification": "CLI tree goldens; compile/run/test of fresh output"
+    },
+    {
+      "id": "REQ-065",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-2gi"
+      ],
+      "tests": [
+        "internal/catalog/cli_tree_test.go",
+        "internal/catalog/foundrydev_surface_test.go",
+        "integration/fixtures/smoke_cli_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "CLI commands MUST be constructed by functions without package-level command globals or `init` registration; Cobra confined to `internal/cli`; errors wrapped and",
+      "spec_verification": "Generated-code static checks; process tests"
+    },
+    {
+      "id": "REQ-066",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-wly"
+      ],
+      "tests": [
+        "integration/fixtures/smoke_cli_test.go",
+        "integration/fixtures/extension_test.go",
+        "integration/dogfood/smoke_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The generated CLI MUST ship unit tests beside code, constructor-level command tests, and `testscript` process tests for help/version/completion; richer extensio",
+      "spec_verification": "Generated tests pass; fixture-based extension-path tests"
+    },
+    {
+      "id": "REQ-067",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-4a6",
+        "go-foundry-cli-a77"
+      ],
+      "tests": [
+        "internal/catalog/cli_tree_test.go",
+        "internal/catalog/core_tree_test.go",
+        "integration/fixtures/smoke_cli_test.go",
+        "docs/evidence/dogfood-cli-smoke.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "CLI side-effect boundaries MUST be added as responsibility-named `internal/` packages only when actually needed; none are pre-generated; growth rules are docume",
+      "spec_verification": "Generated tree audit; docs inspection; dogfood change scenarios"
+    },
+    {
+      "id": "REQ-068",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-jr7",
+        "go-foundry-cli-rrs",
+        "go-foundry-cli-afh"
+      ],
+      "tests": [
+        "internal/catalog/tui_tree_test.go",
+        "catalog/archetypes/tui/manifest.toml",
+        "cmd/foundry/testdata/generate/success_tui_default.txt",
+        "integration/fixtures/smoke_tui_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The generated TUI MUST match Section 18.2: one `internal/tui` package with explicit file responsibilities and a minimal static help/quit screen using the Bubble",
+      "spec_verification": "TUI tree goldens incl. absence checks; compile/run/test of fresh output"
+    },
+    {
+      "id": "REQ-069",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-jr7",
+        "go-foundry-cli-afh"
+      ],
+      "tests": [
+        "internal/catalog/tui_tree_test.go",
+        "integration/tui/view_matrix_test.go",
+        "catalog/archetypes/tui/files/internal/tui/update.go.static"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "TUI state/update/view MUST follow Section 18.4: one model type, one transition site, pure view, centralized theme and keymap, explicit minimum dimensions with a",
+      "spec_verification": "Generated-code static checks; render goldens incl. minimum-size cases"
+    },
+    {
+      "id": "REQ-070",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-jr7",
+        "go-foundry-cli-1yq",
+        "go-foundry-cli-e0x"
+      ],
+      "tests": [
+        "integration/tui/lifecycle_matrix_test.go",
+        "integration/hostile/e4/lifecycle_test.go",
+        "catalog/archetypes/tui/files/internal/tui/lifecycle_test.go.static",
+        "docs/evidence/E4-bubbletea-lifecycle.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The TUI MUST have exactly one lifecycle owner per Section 18.3: `signal.NotifyContext` in `main`, `tea.WithContext(appCtx)` + `tea.WithoutSignalHandler()`, fram",
+      "spec_verification": "Lifecycle tests incl. Ctrl-C-as-key; static option checks; PTY restoration tests"
+    },
+    {
+      "id": "REQ-071",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-1yq",
+        "go-foundry-cli-jr7"
+      ],
+      "tests": [
+        "integration/tui/debuglog_matrix_test.go",
+        "integration/tui/lifecycle_matrix_test.go",
+        "docs/evidence/dogfood-tui-smoke.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Future effects MUST follow the Section 18.7 cooperative rules (documented and fixture-proven), and `--debug-log` MUST accept only a safe basename resolved again",
+      "spec_verification": "Fixture effect-completion tests; debug-log safety matrix incl. separator/traversal arguments (Section 18.8)"
+    },
+    {
+      "id": "REQ-072",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-1yq",
+        "go-foundry-cli-afh",
+        "go-foundry-cli-jr7"
+      ],
+      "tests": [
+        "integration/tui/lifecycle_matrix_test.go",
+        "integration/tui/view_matrix_test.go",
+        "integration/tui/pty_test.go",
+        "integration/tui/debuglog_matrix_test.go",
+        "integration/fixtures/smoke_tui_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The generated TUI MUST ship model/update unit tests, view goldens (incl. no-color, minimum and too-small sizes), lifecycle tests, PTY restoration smoke tests, a",
+      "spec_verification": "Generated test suite passes in staging and CI"
+    },
+    {
+      "id": "REQ-073",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-w4n",
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-s45",
+        "go-foundry-cli-6hp"
+      ],
+      "tests": [
+        "internal/catalog/recipe_test.go",
+        "internal/resolve/resolve_test.go",
+        "cmd/foundry/testdata/writefree/profiles.txt",
+        "docs/recipes/configuration.md",
+        "internal/archtest/recipes_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`configuration` MUST NOT be a schema-1 profile ID: the catalog MUST NOT contain it, selecting it MUST fail `resolve.unknown_profile`, and the configuration capa",
+      "spec_verification": "Unknown-profile rejection test; catalog absence inspection; recipe review"
+    },
+    {
+      "id": "REQ-074",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-6hp",
+        "go-foundry-cli-w4n"
+      ],
+      "tests": [
+        "docs/recipes/configuration.md",
+        "internal/archtest/recipes_test.go",
+        "internal/catalog/recipe_test.go",
+        "internal/catalog/recipe.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The configuration recipe MUST bound its guidance to Section 21.1 (flags > env > one optional TOML file; `caarlos0/env` + `BurntSushi/toml`; secrets via environm",
+      "spec_verification": "Recipe content review; generated-output absence checks"
+    },
+    {
+      "id": "REQ-075",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-w4n",
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-s45",
+        "go-foundry-cli-6hp"
+      ],
+      "tests": [
+        "docs/recipes/local-persistence.md",
+        "internal/archtest/recipes_test.go",
+        "internal/catalog/recipe_test.go",
+        "internal/resolve/resolve_test.go",
+        "cmd/foundry/testdata/writefree/profiles.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`local-persistence` MUST NOT be a schema-1 profile ID: the catalog MUST NOT contain it, selecting it MUST fail `resolve.unknown_profile`, and persistence is del",
+      "spec_verification": "Unknown-profile rejection test; generated-tree/module absence checks; recipe review"
+    },
+    {
+      "id": "REQ-076",
+      "phase": "P4",
+      "owning_beads": [
+        "go-foundry-cli-chf",
+        "go-foundry-cli-1wl",
+        "go-foundry-cli-7fm"
+      ],
+      "tests": [
+        "internal/catalog/distribution_tree_test.go",
+        "docs/evidence/P4-distribution-profile.md",
+        "docs/evidence/self-distribution.md",
+        "internal/cli/catalog_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The `distribution` profile MUST implement exactly the Section 20 contract (owned files incl. `CONTRIBUTING.md`/`SECURITY.md`; public + GitHub-module direct pred",
+      "spec_verification": "Public generation and private/non-GitHub negative tests; release-docs inspection; release dogfood"
+    },
+    {
+      "id": "REQ-077",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-2y7"
+      ],
+      "tests": [
+        "internal/resolve/resolve_test.go",
+        "internal/resolve/purity_test.go",
+        "internal/catalog/manifest_test.go",
+        "internal/archtest/redline_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Profiles MUST be selected as a flat set of exact implemented built-in IDs with only direct archetype/visibility/module-host predicates; schema 1 MUST NOT contai",
+      "spec_verification": "Manifest/plan schema tests proving field absence; flat resolver tests"
+    },
+    {
+      "id": "REQ-078",
+      "phase": "P4",
+      "owning_beads": [
+        "go-foundry-cli-tpa",
+        "go-foundry-cli-vu8",
+        "go-foundry-cli-bjt"
+      ],
+      "tests": [
+        "docs/dev/profile-admission.md",
+        "internal/archtest/profile_admission_test.go",
+        "docs/evidence/P4-exit-review.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "New capability candidates MUST be classified per Section 19.2 and admitted only through the full Section 19.4 admission test, via explicit revision of this specification.",
+      "spec_verification": "Dogfood pattern measurements (`REQ-247`); admission-test record; artifact-revision discipline"
+    },
+    {
+      "id": "REQ-090",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-mpu",
+        "go-foundry-cli-j1m"
+      ],
+      "tests": [
+        "internal/catalog/catalog_test.go",
+        "catalog/versions.toml",
+        "integration/hostile/e5/lock_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The catalog MUST be Git-visible source embedded via `go:embed`, versioned with the Foundry, not user-extensible, with a deterministic SHA-256 digest reported by",
+      "spec_verification": "Digest tests; CI tree-vs-embed comparison; lock-manifest consumption tests"
+    },
+    {
+      "id": "REQ-091",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-mpu"
+      ],
+      "tests": [
+        "internal/catalog/foundrydev_surface_test.go",
+        "internal/catalog/load_dir_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Filesystem catalog loading MUST exist only under the `foundrydev` build tag, apply full validation, and fail closed; release binaries MUST NOT contain it.",
+      "spec_verification": "Build-tag tests; release-binary audit"
+    },
+    {
+      "id": "REQ-092",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-95a",
+        "go-foundry-cli-wkz"
+      ],
+      "tests": [
+        "internal/catalog/manifest_test.go",
+        "internal/catalog/catalog_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Catalog manifests MUST declare exactly the Section 24.3 fields; `requires`, `conflicts`, `capabilities`, `provides`, `helper_binary`, and render modes beyond `s",
+      "spec_verification": "Manifest schema tests; unknown-field rejection"
+    },
+    {
+      "id": "REQ-093",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-9a7"
+      ],
+      "tests": [
+        "internal/resolve/collision_test.go",
+        "internal/plan/plan_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Every ordinary output file MUST have exactly one owner; any duplicate output path \u2014 including byte-identical content \u2014 MUST fail `plan.file_collision` naming ev",
+      "spec_verification": "Collision tests incl. parent/child conflicts"
+    },
+    {
+      "id": "REQ-094",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-95a",
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-qb0"
+      ],
+      "tests": [
+        "internal/catalog/manifest_test.go",
+        "internal/render/path.go",
+        "internal/render/dispatch_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Output paths MUST be relative, safe (no `..`, no absolute, no symlink), files 0644, directories 0755 created implicitly, staging 0700; no empty directories, bin",
+      "spec_verification": "Catalog validation tests; generated tree audits"
+    },
+    {
+      "id": "REQ-095",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-5su",
+        "go-foundry-cli-3ms"
+      ],
+      "tests": [
+        "internal/render/gomod_test.go",
+        "internal/render/gomod_fuzz_test.go",
+        "internal/render/dispatch_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`go.mod` MUST be the only file with multiple semantic contributors, produced solely by the typed `modfile` generator with fatal same-module version conflicts; `",
+      "spec_verification": "gomod generator unit tests; conflict tests"
+    },
+    {
+      "id": "REQ-096",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-3ms",
+        "go-foundry-cli-l81",
+        "go-foundry-cli-qm0",
+        "go-foundry-cli-5su"
+      ],
+      "tests": [
+        "internal/render/dispatch_test.go",
+        "internal/render/static_test.go",
+        "internal/render/template_test.go",
+        "internal/render/gomod_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Exactly three rendering mechanisms MUST exist \u2014 static copy, restricted complete-file template, typed `go.mod` \u2014 with no token-substitution language and no type",
+      "spec_verification": "Render-strategy enum tests; native-tool parse of generated workflow files"
+    },
+    {
+      "id": "REQ-097",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-qm0",
+        "go-foundry-cli-3ms"
+      ],
+      "tests": [
+        "internal/render/template_test.go",
+        "internal/render/template_fuzz_test.go",
+        "internal/render/dispatch_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Restricted templates MUST use `[[`/`]]`, `missingkey=error`, frozen typed data, exactly the `join`/`quote` functions, and no partials, includes, reflection, env",
+      "spec_verification": "Template-contract tests; hostile-template catalog validation"
+    },
+    {
+      "id": "REQ-098",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/resolve/purity_test.go",
+        "internal/resolve/resolve_test.go",
+        "internal/archtest/quality_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The resolver MUST be a pure function of validated specification and catalog with no filesystem, environment, subprocess, clock, logging, or output, returning im",
+      "spec_verification": "Purity tests (fake-free unit tests); determinism property tests"
+    },
+    {
+      "id": "REQ-099",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45"
+      ],
+      "tests": [
+        "internal/resolve/resolve_test.go",
+        "internal/resolve/constraints_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Resolution MUST implement exactly the Section 23.2 rules \u2014 unknown/duplicate/incompatible selection failures with exact identifiers \u2014 and MUST NOT implement gra",
+      "spec_verification": "Flat-resolution table tests; static absence audit"
+    },
+    {
+      "id": "REQ-100",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-9a7"
+      ],
+      "tests": [
+        "internal/resolve/resolve_test.go",
+        "internal/plan/plan_test.go",
+        "internal/plan/golden_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "All resolved and planned collections MUST be deterministically ordered (paths, profile IDs, modules); no map-iteration order may reach any output; no provenance",
+      "spec_verification": "Repeated-resolution equality tests; plan byte-equality"
+    },
+    {
+      "id": "REQ-101",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-41p"
+      ],
+      "tests": [
+        "internal/resolve/resolve_test.go",
+        "internal/catalog/recipe_test.go",
+        "internal/report/encoder_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry MUST NOT implement a general constraint solver, fuzzy matching, or \"did you mean\" search; unknown identifiers fail with the exact sorted available s",
+      "spec_verification": "Error-output goldens"
+    },
+    {
+      "id": "REQ-120",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-9a7",
+        "go-foundry-cli-6wj",
+        "go-foundry-cli-j8h.4"
+      ],
+      "tests": [
+        "internal/plan/plan_test.go",
+        "internal/cli/pipeline_test.go",
+        "internal/plan/schema_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Generation Plan MUST be a first-class immutable value produced identically by `plan` and `generate`; `generate` MUST execute exactly the plan and nothing el",
+      "spec_verification": "Plan-equality tests between commands; process-tree audit against `external_steps`"
+    },
+    {
+      "id": "REQ-121",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-9a7"
+      ],
+      "tests": [
+        "internal/plan/schema_test.go",
+        "internal/plan/golden_test.go",
+        "internal/plan/testdata/"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The plan MUST contain exactly the Section 28.2 fields \u2014 including per-file source and planned-content digests, exact external-step argv/environment/timeout/outp",
+      "spec_verification": "Plan JSON schema tests; golden plans; digest-conformance tests"
+    },
+    {
+      "id": "REQ-122",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-9a7",
+        "go-foundry-cli-5an.1"
+      ],
+      "tests": [
+        "internal/plan/plan_test.go",
+        "internal/plan/golden_test.go",
+        "internal/archtest/quality_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The plan MUST serialize to byte-identical JSON for identical validated inputs (stable field order, sorted collections) and MUST be immutable after construction.",
+      "spec_verification": "Serialization determinism tests; mutation-attempt compile/runtime checks"
+    },
+    {
+      "id": "REQ-123",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-dd1",
+        "go-foundry-cli-nx1",
+        "go-foundry-cli-j8h.2"
+      ],
+      "tests": [
+        "internal/generate/machine_test.go",
+        "internal/generate/state_test.go",
+        "integration/generate/matrix_success_test.go",
+        "integration/generate/matrix_failure_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`generate` MUST execute the total Section 29 lifecycle in order, with every stage's failure behavior and cleanup defined; no stage may be skipped, reordered, or",
+      "spec_verification": "Lifecycle failure-injection tests at every stage"
+    },
+    {
+      "id": "REQ-124",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-2fe",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-qd8",
+        "go-foundry-cli-97c"
+      ],
+      "tests": [
+        "internal/fsx/parent_test.go",
+        "internal/fsx/destination_test.go",
+        "internal/fsx/transaction_test.go",
+        "integration/hostile/e1/e1_test.go",
+        "integration/hostile/fsx/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Destination preflight MUST acquire the parent via the Section 31.2 no-follow component walk with the Section 31.3 custody check, retain the handle for the trans",
+      "spec_verification": "Parent-swap race tests (barrier-controlled) on macOS/Linux; custody matrix; static transaction audit"
+    },
+    {
+      "id": "REQ-125",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-2o3",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-qd8"
+      ],
+      "tests": [
+        "internal/fsx/stage_test.go",
+        "internal/fsx/transaction_test.go",
+        "integration/hostile/fsx/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Staging MUST be created exclusively relative to the retained parent handle (0700, `.foundry-<name>-<random>`, bounded `EEXIST` retries), its identity recorded, ",
+      "spec_verification": "Stage-creation race tests; rooted-writer escape tests; umask-variation mode tests"
+    },
+    {
+      "id": "REQ-126",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-3ms",
+        "go-foundry-cli-sui",
+        "go-foundry-cli-dd1"
+      ],
+      "tests": [
+        "internal/render/dispatch_test.go",
+        "internal/render/static_test.go",
+        "internal/verify/mutation_test.go",
+        "internal/verify/baseline_test.go",
+        "internal/generate/tree_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Rendering MUST produce complete files with LF endings, `go/format`-clean Go source, and deterministic bytes; after `go mod tidy` the tree MUST be frozen as the ",
+      "spec_verification": "Renderer goldens; freeze-and-conform tests"
+    },
+    {
+      "id": "REQ-127",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-sui",
+        "go-foundry-cli-dd1"
+      ],
+      "tests": [
+        "internal/verify/verify_test.go",
+        "internal/verify/e2e_test.go",
+        "internal/generate/machine_test.go",
+        "integration/generate/matrix_failure_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "All verification MUST complete successfully in staging before commit; no destination placement may occur for an unverified tree; there is no bypass (see `REQ-15",
+      "spec_verification": "Verification-failure tests proving no placement"
+    },
+    {
+      "id": "REQ-128",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-8jp",
+        "go-foundry-cli-bhn"
+      ],
+      "tests": [
+        "internal/gitinit/init_test.go",
+        "internal/gitinit/hostile_test.go",
+        "internal/gitinit/semantic_test.go",
+        "internal/gitinit/surface_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Optional Git initialization MUST run in staging as exactly the isolated invocation of Section 34.2 (empty owned template, no system/global config), followed by ",
+      "spec_verification": "Isolated-git tests with hostile host config/templates; `.git` semantic checks"
+    },
+    {
+      "id": "REQ-129",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-npy",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-qd8",
+        "go-foundry-cli-97c"
+      ],
+      "tests": [
+        "internal/fsx/commit_test.go",
+        "internal/fsx/classify_test.go",
+        "integration/hostile/e1/e1_test.go",
+        "integration/hostile/fsx/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Commit MUST be a single exclusive no-replace rename relative to the retained parent handle (Linux `RENAME_NOREPLACE`; Darwin `RENAME_EXCL \\| RENAME_NOFOLLOW_ANY",
+      "spec_verification": "Commit primitive tests per filesystem matrix (E1); two-process `EEXIST` races"
+    },
+    {
+      "id": "REQ-130",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-e79",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-2y7",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/fsx/preserve_test.go",
+        "internal/fsx/preservation_audit_test.go",
+        "internal/archtest/redline_test.go",
+        "integration/hostile/fsx/audit_test.go",
+        "integration/generate/matrix_failure_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "**No production code path may automatically delete a created stage.** Every uncommitted outcome \u2014 failure, cancellation, conflict, ambiguity \u2014 MUST preserve the",
+      "spec_verification": "Static no-stage-delete audit; preservation-reporting tests; table-driven commit-result state-machine tests with cancellation injection"
+    },
+    {
+      "id": "REQ-131",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-npy",
+        "go-foundry-cli-e79",
+        "go-foundry-cli-qd8"
+      ],
+      "tests": [
+        "internal/fsx/classify_test.go",
+        "internal/fsx/commit_test.go",
+        "internal/fsx/preserve_test.go",
+        "integration/hostile/fsx/suite_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Commit results MUST be classified by post-syscall identity inspection per Section 31.8 (`fs.commit_ambiguous` on contradictory identities, with all further muta",
+      "spec_verification": "Identity-classification tests incl. injected ambiguous acknowledgments; concurrent-process tests; leftover-report tests"
+    },
+    {
+      "id": "REQ-132",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-j8h.4",
+        "go-foundry-cli-wly",
+        "go-foundry-cli-dd1"
+      ],
+      "tests": [
+        "internal/cli/plan_generate_equality_test.go",
+        "integration/fixtures/plan_generate_equality_test.go",
+        "cmd/foundry/testdata/generate/double_generation.txt",
+        "integration/generate/matrix_success_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Determinism inputs MUST be exactly: the Foundry binary (embedded catalog), the validated specification, and the declared tool versions; nothing else may influen",
+      "spec_verification": "Double-generation equality; envelope-variation tests"
+    },
+    {
+      "id": "REQ-133",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-j8h.2",
+        "go-foundry-cli-wly",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "integration/generate/matrix_success_test.go",
+        "internal/generate/tree_test.go",
+        "internal/render/static_test.go",
+        "integration/fixtures/smoke_cli_test.go",
+        "internal/archtest/redline_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "No output may contain timestamps, usernames, hostnames, locale-dependent text, absolute host paths, or any host-derived data; the destination path appears only ",
+      "spec_verification": "Content scans over golden trees"
+    },
+    {
+      "id": "REQ-134",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-qd8",
+        "go-foundry-cli-3ms"
+      ],
+      "tests": [
+        "internal/fsx/stage_test.go",
+        "internal/render/static_test.go",
+        "integration/hostile/fsx/suite_test.go",
+        "internal/generate/tree_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "All generated text files MUST use LF endings, files 0644/dirs 0755/staging 0700; name equivalence is decided by the host filesystem via native exact-child looku",
+      "spec_verification": "Cross-platform tree manifest comparison; case-sensitivity matrix"
+    },
+    {
+      "id": "REQ-135",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-x7b",
+        "go-foundry-cli-075",
+        "go-foundry-cli-ni0",
+        "go-foundry-cli-j1m"
+      ],
+      "tests": [
+        "internal/toolrun/preflight_test.go",
+        "internal/toolrun/env_test.go",
+        "integration/hostile/e2/e2_test.go",
+        "integration/hostile/sentinel/sentinel_test.go",
+        "catalog/versions.toml"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Every dependency, tool, action, and toolchain version MUST be exact per Section 12 and `catalog/versions.toml`; tool behavior MUST be pinned by the Section 34.2",
+      "spec_verification": "BOM/plan inspection; hostile-environment sentinel tests; wrong-version preflight tests"
+    },
+    {
+      "id": "REQ-150",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-sui",
+        "go-foundry-cli-j8h.2"
+      ],
+      "tests": [
+        "internal/verify/verify_test.go",
+        "internal/verify/mutation_test.go",
+        "internal/verify/gofmt_test.go",
+        "internal/verify/e2e_test.go",
+        "integration/generate/matrix_success_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Default verification MUST be gofmt conformance, tidy mutation-set validation (`go.mod`/`go.sum` only; exact pins reparse; no replace/exclude directives), `go mo",
+      "spec_verification": "Generated-project end-to-end tests; cached-test bypass regression test; module-mutation tests"
+    },
+    {
+      "id": "REQ-151",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-sui"
+      ],
+      "tests": [
+        "internal/verify/mode_test.go",
+        "internal/verify/steps_test.go",
+        "internal/verify/e2e_test.go",
+        "cmd/foundry/testdata/generate/success_strict.txt",
+        "integration/generate/matrix_success_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Strict mode (`--verify strict`) MUST add `go tool staticcheck ./...` and `go tool govulncheck ./...`; race is never part of generation verification and runs onl",
+      "spec_verification": "Strict-mode matrix tests; absence-of-race-in-generation audit"
+    },
+    {
+      "id": "REQ-152",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-sui",
+        "go-foundry-cli-c6b",
+        "go-foundry-cli-2y7"
+      ],
+      "tests": [
+        "internal/verify/mode_test.go",
+        "internal/cli/flags_test.go",
+        "internal/cli/surface_test.go",
+        "internal/archtest/redline_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "No flag, environment variable, or configuration may bypass, weaken, or skip verification; `--verify` accepts exactly `default` and `strict`.",
+      "spec_verification": "Flag-rejection tests; help goldens"
+    },
+    {
+      "id": "REQ-153",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-x7b",
+        "go-foundry-cli-075"
+      ],
+      "tests": [
+        "internal/toolrun/run_test.go",
+        "internal/toolrun/preflight_test.go",
+        "internal/toolrun/env_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry MUST execute exactly the plan-declared steps using only the `go` and `git` binaries located once at startup, with no shell anywhere; a missing tool ",
+      "spec_verification": "Runner allowlist tests; missing/wrong-version tool tests"
+    },
+    {
+      "id": "REQ-154",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-0gy",
+        "go-foundry-cli-x7b",
+        "go-foundry-cli-ni0",
+        "go-foundry-cli-bhn"
+      ],
+      "tests": [
+        "internal/toolrun/env_test.go",
+        "internal/toolrun/cwd_test.go",
+        "internal/toolrun/cap_test.go",
+        "internal/toolrun/sentinel_test.go",
+        "integration/hostile/e2/e2_test.go",
+        "integration/hostile/sentinel/sentinel_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Every subprocess MUST run with the exact constructed environment of Section 34.2 (empty base plus allowlist), its working directory bound to the retained stage ",
+      "spec_verification": "Environment-construction unit tests; sentinel leak tests; child-cwd swap and restore-failure tests; timeout/cap tests"
+    },
+    {
+      "id": "REQ-155",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-41p",
+        "go-foundry-cli-j8h.3",
+        "go-foundry-cli-fy9"
+      ],
+      "tests": [
+        "internal/report/stages_test.go",
+        "internal/report/encoder_test.go",
+        "cmd/foundry/testdata/writefree/"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Human output MUST follow Section 36: plain line-oriented stdout, diagnostics on stderr, stable per-stage progress names, `NO_COLOR` honored, no prompts, every f",
+      "spec_verification": "Output goldens; real broken-pipe stream-failure tests"
+    },
+    {
+      "id": "REQ-156",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-41p",
+        "go-foundry-cli-80g",
+        "go-foundry-cli-fy9"
+      ],
+      "tests": [
+        "internal/report/encoder_test.go",
+        "internal/report/golden_test.go",
+        "internal/cli/pipeline_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "JSON output MUST follow Section 37: one versioned deterministic document on stdout with empty stderr, commit-outcome enum and preserved-stage location included ",
+      "spec_verification": "JSON schema tests; committed-success stream-failure tests; empty-stderr tests"
+    },
+    {
+      "id": "REQ-157",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-jq1"
+      ],
+      "tests": [
+        "internal/diagnostic/registry_test.go",
+        "internal/diagnostic/error_test.go",
+        "internal/archtest/quality_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Every failure MUST carry a stable `domain.reason` identifier from the Appendix D inventory, owned by the `internal/diagnostic` registry with tested uniqueness; ",
+      "spec_verification": "Error-taxonomy completeness and uniqueness tests"
+    },
+    {
+      "id": "REQ-158",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-fy9",
+        "go-foundry-cli-dd1",
+        "go-foundry-cli-zhm"
+      ],
+      "tests": [
+        "internal/generate/stream.go",
+        "internal/generate/stream_test.go",
+        "internal/generate/machine.go",
+        "internal/report/pipe_test.go",
+        "internal/report/encoder_test.go",
+        "cmd/foundry/sigpipe.go",
+        "cmd/foundry/main.go",
+        "cmd/foundry/sigpipe_unix_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Exit statuses MUST be exactly 0 (success, including post-commit report failure), 1 (runtime/tool/verification/commit failure/ambiguity), 2 (input/selection/dest",
+      "spec_verification": "Exit-code matrix tests; commit-dominance tests; real SIGPIPE process tests"
+    },
+    {
+      "id": "REQ-159",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-jq1",
+        "go-foundry-cli-41p"
+      ],
+      "tests": [
+        "internal/diagnostic/redact_test.go",
+        "internal/diagnostic/error_test.go",
+        "internal/report/encoder_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Errors MUST be actionable (location + smallest correct remediation), `--verbose` adds diagnostic detail to stderr only, and all diagnostics MUST redact known-se",
+      "spec_verification": "Diagnostic and redaction tests"
+    },
+    {
+      "id": "REQ-160",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-8jp",
+        "go-foundry-cli-bhn"
+      ],
+      "tests": [
+        "internal/gitinit/init_test.go",
+        "internal/gitinit/hostile_test.go",
+        "internal/gitinit/semantic_test.go",
+        "internal/gitinit/surface_test.go",
+        "integration/hostile/sentinel/sentinel_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry's complete Git behavior MUST be the single isolated `git init` of Section 39; no commits, identity, hooks, remotes, or other subcommands ever.",
+      "spec_verification": "Git behavior tests; process-tree audit"
+    },
+    {
+      "id": "REQ-161",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-a77",
+        "go-foundry-cli-2y7",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/catalog/core_tree_test.go",
+        "internal/archtest/redline_test.go",
+        "integration/fixtures/smoke_cli_test.go",
+        "internal/generate/tree_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "No persistent Foundry provenance file may be generated; the plan is the provenance record; the single `AGENTS.md` comment line is the only generated Foundry ref",
+      "spec_verification": "Generated tree audit"
+    },
+    {
+      "id": "REQ-162",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-c6b",
+        "go-foundry-cli-zhm"
+      ],
+      "tests": [
+        "internal/version/version_test.go",
+        "internal/cli/surface_test.go",
+        "cmd/foundry/testdata/writefree/version.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Foundry versioning MUST be semantic across CLI surface, plan schema, and specification schema together, with embedded build metadata from build settings, not li",
+      "spec_verification": "Version-output tests; release inspection"
+    },
+    {
+      "id": "REQ-163",
+      "phase": "P4",
+      "owning_beads": [
+        "go-foundry-cli-cf1"
+      ],
+      "tests": [
+        ".github/dependabot.yml",
+        "catalog/versions.toml",
+        "internal/archtest/action_sha_pins_test.go",
+        ".github/workflows/ci.yml"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Dependabot MUST keep the Foundry repository updated weekly; catalog pin bumps MUST regenerate all fixtures in CI; a published vulnerability in a pinned generate",
+      "spec_verification": "Dependabot config inspection; update-PR drill; vuln-response drill"
+    },
+    {
+      "id": "REQ-164",
+      "phase": "P4",
+      "owning_beads": [
+        "go-foundry-cli-1wl",
+        "go-foundry-cli-chf"
+      ],
+      "tests": [
+        "docs/evidence/self-distribution.md",
+        "docs/evidence/P4-distribution-profile.md",
+        "docs/evidence/OQ-300-module-path.md",
+        "README.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Foundry installation MUST be `go install`/local build until Phase 4, then the distribution profile's own architecture applied to the Foundry (Section 48); no se",
+      "spec_verification": "Install smoke tests; release snapshot"
+    },
+    {
+      "id": "REQ-165",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-j8h.1",
+        "go-foundry-cli-vu8",
+        "go-foundry-cli-5an.1"
+      ],
+      "tests": [
+        "docs/evidence/perf/baselines-latest.json",
+        "docs/evidence/perf/summary.md",
+        "docs/evidence/perf/P2.8-citation.md",
+        "scripts/perf/capture-baselines.sh",
+        "internal/archtest/perf_baseline.go",
+        "internal/archtest/perf_baseline_test.go",
+        "docs/evidence/dogfood-cli-smoke.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Performance MUST meet Section 49: write-free commands immediate and tool-free; per-stage generation timing reported; baselines measured in Phase 2 dogfood befor",
+      "spec_verification": "Timing-report tests; recorded baselines"
+    },
+    {
+      "id": "REQ-180",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-zhm",
+        "go-foundry-cli-4hi",
+        "go-foundry-cli-2y7"
+      ],
+      "tests": [
+        "internal/archtest/arch_test.go",
+        "internal/archtest/rules.go",
+        "internal/archtest/redline_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The Foundry repository MUST match the Section 42.1 canonical tree; `internal/compose`, `internal/structured`, and provenance-chain types MUST NOT exist.",
+      "spec_verification": "Tree inspection; import tests"
+    },
+    {
+      "id": "REQ-181",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-zhm",
+        "go-foundry-cli-4hi",
+        "go-foundry-cli-c6b"
+      ],
+      "tests": [
+        "cmd/foundry/main.go",
+        "internal/archtest/arch_test.go",
+        "internal/cli/surface_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`cmd/foundry/main.go` MUST be the only `os.Exit` site and the single error-to-exit translation point; `internal/cli` owns flags and output-mode selection only.",
+      "spec_verification": "Static checks; process tests"
+    },
+    {
+      "id": "REQ-182",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-di6",
+        "go-foundry-cli-wkz",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/spec/suite_test.go",
+        "internal/catalog/catalog_test.go",
+        "internal/archtest/arch_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`internal/spec` and `internal/catalog` MUST own parsing/validation exclusively and produce immutable validated values with source positions.",
+      "spec_verification": "Ownership/import tests"
+    },
+    {
+      "id": "REQ-183",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-9a7",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/resolve/purity_test.go",
+        "internal/plan/purity_test.go",
+        "internal/archtest/arch_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`internal/resolve` and `internal/plan` MUST own resolution and planning exclusively, implementing only the flat Section 23/27/28 semantics.",
+      "spec_verification": "Import tests; flat-semantics audit"
+    },
+    {
+      "id": "REQ-184",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-3ms",
+        "go-foundry-cli-2y7",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/fsx/transaction_test.go",
+        "internal/fsx/preservation_audit_test.go",
+        "internal/archtest/arch_test.go",
+        "internal/archtest/quality_test.go",
+        "internal/render/purity_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`internal/fsx` MUST be the only package mutating the destination/staging filesystem, exposing only descriptor-relative operations and **no stage-deletion method",
+      "spec_verification": "Static architecture tests incl. no-delete audit; import-graph enforcement"
+    },
+    {
+      "id": "REQ-185",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-x7b",
+        "go-foundry-cli-dd1",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/toolrun/run_test.go",
+        "internal/toolrun/cwd_test.go",
+        "internal/archtest/arch_test.go",
+        "internal/archtest/quality_test.go",
+        "internal/generate/machine_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`internal/toolrun` MUST be the only subprocess-starting package and the sole owner of the original-cwd descriptor and child-start mutex; `internal/generate` MUS",
+      "spec_verification": "Fake-runner tests; static subprocess audit; event/encoding separation tests"
+    },
+    {
+      "id": "REQ-186",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-41p",
+        "go-foundry-cli-jq1",
+        "go-foundry-cli-c6b"
+      ],
+      "tests": [
+        "internal/report/encoder_test.go",
+        "internal/diagnostic/registry_test.go",
+        "internal/version/version_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "`internal/report` MUST own all human/JSON formatting, consuming typed events/results only; `internal/diagnostic` MUST own the error-identifier registry; `intern",
+      "spec_verification": "Output-ownership tests; registry tests"
+    },
+    {
+      "id": "REQ-187",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-zhm",
+        "go-foundry-cli-4hi",
+        "go-foundry-cli-2y7"
+      ],
+      "tests": [
+        "internal/archtest/arch_test.go",
+        "internal/archtest/rules.go",
+        "internal/archtest/quality_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Package dependencies MUST flow strictly downward per Section 42.3, with interfaces only for true external seams (process runner, output writers, unexported plat",
+      "spec_verification": "Import-cycle/static architecture tests; interface inventory review"
+    },
+    {
+      "id": "REQ-188",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-jq1",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/diagnostic/error_test.go",
+        "internal/diagnostic/registry_test.go",
+        "internal/archtest/arch_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Contexts MUST flow explicitly as first parameters; boundary-crossing values MUST be immutable; no package-level mutable state; panics MUST NOT cross package bou",
+      "spec_verification": "Static checks; invariant unit tests"
+    },
+    {
+      "id": "REQ-210",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-d0i",
+        "go-foundry-cli-di6",
+        "go-foundry-cli-zhm.1"
+      ],
+      "tests": [
+        "internal/spec/suite_test.go",
+        "internal/spec/fuzz_test.go",
+        "internal/testutil/steplog_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Specification parsing/validation MUST have table-driven unit tests covering every error identifier and every field rule, plus parser fuzzing.",
+      "spec_verification": "Coverage of the Appendix D spec-domain identifiers"
+    },
+    {
+      "id": "REQ-211",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-s45",
+        "go-foundry-cli-9a7",
+        "go-foundry-cli-5an.1"
+      ],
+      "tests": [
+        "internal/resolve/resolve_test.go",
+        "internal/plan/golden_test.go",
+        "internal/plan/plan_test.go",
+        "cmd/foundry/testdata/writefree/plan.txt",
+        "internal/plan/property_test.go",
+        "internal/resolve/property_test.go",
+        "internal/testutil/propfixture.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "Resolver and planner MUST have unit, property (determinism/ordering), and golden-plan tests for every fixture.",
+      "spec_verification": "Golden suite in CI"
+    },
+    {
+      "id": "REQ-212",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-3ms",
+        "go-foundry-cli-j8h.2",
+        "go-foundry-cli-wly"
+      ],
+      "tests": [
+        "internal/render/static_test.go",
+        "internal/render/template_test.go",
+        "internal/render/gomod_test.go",
+        "internal/render/dispatch_test.go",
+        "integration/fixtures/smoke_cli_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Rendering MUST have unit and golden tests per mechanism (`static`, `template`, `gomod`), including native-tool parsing of generated workflow/GoReleaser files an",
+      "spec_verification": "Renderer test suite"
+    },
+    {
+      "id": "REQ-213",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-qd8",
+        "go-foundry-cli-qb0",
+        "go-foundry-cli-97c",
+        "go-foundry-cli-j8h.2"
+      ],
+      "tests": [
+        "integration/hostile/fsx/suite_test.go",
+        "integration/hostile/fsx/audit_test.go",
+        "internal/fsx/hostile_test.go",
+        "integration/hostile/e1/e1_test.go",
+        "internal/fsx/preservation_audit_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Filesystem behavior MUST have the hostile suite of Section 45.1: parent/stage swap races, custody matrices, rooted-writer escapes, commit races with loser prese",
+      "spec_verification": "Hostile suite green on both platforms; audit in CI"
+    },
+    {
+      "id": "REQ-214",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-bhn",
+        "go-foundry-cli-x7b",
+        "go-foundry-cli-ni0",
+        "go-foundry-cli-fy9"
+      ],
+      "tests": [
+        "integration/hostile/sentinel/sentinel_test.go",
+        "internal/toolrun/sentinel_test.go",
+        "integration/hostile/e2/e2_test.go",
+        "cmd/foundry/sigpipe_unix_test.go",
+        "internal/generate/stream_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "External tool execution MUST have fake-runner unit tests plus real sentinel tests proving environment/config/template isolation, descriptor-bound child cwd (inc",
+      "spec_verification": "Sentinel suite (E2 promoted into CI); SIGPIPE process tests"
+    },
+    {
+      "id": "REQ-215",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-wly",
+        "go-foundry-cli-afh",
+        "go-foundry-cli-cic",
+        "go-foundry-cli-1yq"
+      ],
+      "tests": [
+        "integration/fixtures/smoke_tui_test.go",
+        "integration/tui/lifecycle_matrix_test.go",
+        "integration/tui/pty_test.go",
+        "cmd/foundry/testdata/generate/success_tui_default.txt",
+        "integration/generate/matrix_success_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Every golden generated project MUST compile, test (`-count=1`), vet, and lint cleanly in CI, including TUI lifecycle/PTY/debug-log matrices and the deliberate-m",
+      "spec_verification": "Generated-project matrix in CI"
+    },
+    {
+      "id": "REQ-216",
+      "phase": "P4",
+      "owning_beads": [
+        "go-foundry-cli-chf",
+        "go-foundry-cli-s45",
+        "go-foundry-cli-wly"
+      ],
+      "tests": [
+        "internal/resolve/constraints_test.go",
+        "internal/cli/catalog_test.go",
+        "internal/catalog/distribution_tree_test.go",
+        "cmd/foundry/testdata/writefree/profiles.txt"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Profile testing MUST cover exactly the real selection space: no profiles (MVP) and `distribution` on both archetypes with both visibilities (post-MVP); no synth",
+      "spec_verification": "Bounded combination tests"
+    },
+    {
+      "id": "REQ-217",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-ig3",
+        "go-foundry-cli-cic",
+        "go-foundry-cli-d0i"
+      ],
+      "tests": [
+        "integration/hostile/e3/e3_test.go",
+        "integration/hostile/e3/knownrace/race_test.go",
+        "integration/hostile/e3/preflight_test.go",
+        "internal/spec/fuzz_test.go",
+        "internal/render/gomod_fuzz_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Fuzzing MUST cover the spec parser and path normalization; race jobs (preflighted, `CGO_ENABLED=1`) MUST run in Foundry CI with a known-race fixture proving ins",
+      "spec_verification": "Fuzz corpus in strict CI; race-fixture evidence"
+    },
+    {
+      "id": "REQ-218",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-hrc",
+        "go-foundry-cli-5an.1",
+        "go-foundry-cli-j8h.2",
+        "go-foundry-cli-zhm"
+      ],
+      "tests": [
+        "cmd/foundry/script_test.go",
+        "cmd/foundry/testdata/generate/success_default.txt",
+        "integration/generate/matrix_success_test.go",
+        "integration/generate/matrix_failure_test.go",
+        "docs/evidence/P3-cross-platform-e2e-hrc.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "End-to-end `testscript` suites MUST drive the real binary across validate/plan/generate/cancel/failure paths on Linux and macOS CI.",
+      "spec_verification": "Cross-platform e2e workflows"
+    },
+    {
+      "id": "REQ-219",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-zhm.1",
+        "go-foundry-cli-4hi"
+      ],
+      "tests": [
+        "internal/testutil/golden_test.go",
+        "internal/testutil/golden.go",
+        "internal/archtest/quality_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Golden updates MUST require the test-only `UPDATE_GOLDEN=1`, update one named suite at a time, print changed paths, and refuse bulk updates above a documented t",
+      "spec_verification": "Guarded-update command tests; CI policy check"
+    },
+    {
+      "id": "REQ-220",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-qd8",
+        "go-foundry-cli-bhn",
+        "go-foundry-cli-2y7",
+        "go-foundry-cli-bjt"
+      ],
+      "tests": [
+        "integration/hostile/fsx/suite_test.go",
+        "integration/hostile/sentinel/sentinel_test.go",
+        "internal/render/template_test.go",
+        "internal/archtest/redline_test.go",
+        "internal/fsx/preservation_audit_test.go",
+        "docs/evidence/P2-exit-review.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Security controls of Section 46.2 MUST each have at least one attacking test: transaction races, template escapes, catalog smuggling, hostile tool configuration",
+      "spec_verification": "Threat-matrix test inventory; security review"
+    },
+    {
+      "id": "REQ-221",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-jq1",
+        "go-foundry-cli-x7b",
+        "go-foundry-cli-1yq"
+      ],
+      "tests": [
+        "internal/diagnostic/redact_test.go",
+        "internal/toolrun/env_test.go",
+        "internal/testutil/redact_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "No secret may appear in specifications, plans, generated content, logs, or diagnostics; redaction of known-sensitive environment/proxy/credential values MUST be",
+      "spec_verification": "Redaction sentinel tests; dependency scan; plan content scan"
+    },
+    {
+      "id": "REQ-222",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-cic",
+        "go-foundry-cli-zhm"
+      ],
+      "tests": [
+        ".github/workflows/ci.yml",
+        "internal/archtest/foundry_ci_test.go",
+        "docs/evidence/P3-ci-reduced-matrix.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Foundry PR/default CI MUST run the Section 47.1 `ci.yml` matrix and block merge on any failure, including the catalog-digest and golden-matrix checks.",
+      "spec_verification": "Actual GitHub Actions runs"
+    },
+    {
+      "id": "REQ-223",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-cic",
+        "go-foundry-cli-a77"
+      ],
+      "tests": [
+        ".github/workflows/strict.yml",
+        ".github/workflows/ci.yml",
+        "docs/evidence/P3-ci-reduced-matrix.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Foundry scheduled CI MUST run `strict.yml` (govulncheck, fuzz, cold-cache baseline, full hostile suite); generated projects MUST carry exactly the reduced Secti",
+      "spec_verification": "Scheduled workflow runs; generated workflow goldens"
+    },
+    {
+      "id": "REQ-224",
+      "phase": "P4",
+      "owning_beads": [
+        "go-foundry-cli-cf1",
+        "go-foundry-cli-zhm",
+        "go-foundry-cli-j1m"
+      ],
+      "tests": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/release.yml",
+        "internal/archtest/action_sha_pins_test.go",
+        "integration/hostile/e5/lock_test.go",
+        "catalog/versions.toml"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "All GitHub Actions everywhere MUST be pinned by full commit SHA with version comments; release workflows MUST be tag-triggered with least permissions and never ",
+      "spec_verification": "Workflow inspection tests; release snapshot"
+    },
+    {
+      "id": "REQ-240",
+      "phase": "S6",
+      "owning_beads": [
+        "go-foundry-cli-o60",
+        "go-foundry-cli-97c",
+        "go-foundry-cli-ni0",
+        "go-foundry-cli-ig3",
+        "go-foundry-cli-e0x",
+        "go-foundry-cli-j1m"
+      ],
+      "tests": [
+        "docs/evidence/E1-descriptor-relative-transaction.md",
+        "docs/evidence/E2-go-git-env-isolation.md",
+        "docs/evidence/E3-race-prerequisites.md",
+        "docs/evidence/E4-bubbletea-lifecycle.md",
+        "docs/evidence/E5-version-action-lock.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "The five phase-entry evidence gates (E1\u2013E5, Section 51.2) MUST be executed and recorded at their exact phase boundaries \u2014 E5 before Phase 1 exit, E1\u2013E3 before a",
+      "spec_verification": "Recorded evidence per Appendix I; phase-boundary review"
+    },
+    {
+      "id": "REQ-241",
+      "phase": "P1",
+      "owning_beads": [
+        "go-foundry-cli-0z4",
+        "go-foundry-cli-5an",
+        "go-foundry-cli-5an.1"
+      ],
+      "tests": [
+        "docs/evidence/P1-exit-review.md",
+        "docs/evidence/req-traceability.json",
+        "cmd/foundry/writefree_e2e_test.go",
+        "cmd/foundry/testdata/writefree/",
+        "internal/archtest/quality_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Phase 1 MUST deliver the complete write-free surface (`validate`, `plan`, `catalog`, `version`) with golden plans, full error-identifier coverage, rejection of ",
+      "spec_verification": "Phase 1 exit checklist (Section 51.1)"
+    },
+    {
+      "id": "REQ-242",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-5pr",
+        "go-foundry-cli-j8h",
+        "go-foundry-cli-vu8"
+      ],
+      "tests": [
+        "docs/evidence/P2-exit-review.md",
+        "docs/evidence/dogfood-cli-smoke.md",
+        "docs/evidence/dogfood-cli-repo-map.md",
+        "docs/evidence/perf/P2.8-citation.md",
+        "integration/generate/matrix_success_test.go",
+        "cmd/foundry/testdata/generate/",
+        "integration/dogfood/product_matrix_test.go",
+        "docs/evidence/product-e2e-linux.md",
+        "docs/dev/product-e2e-plan.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "Phase 2 MUST deliver transactional CLI generation passing default and strict verification plus the hostile/race/preservation suites on macOS/Linux, and MUST cre",
+      "spec_verification": "Phase 2 exit checklist; dogfood records"
+    },
+    {
+      "id": "REQ-243",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-66w",
+        "go-foundry-cli-1b7",
+        "go-foundry-cli-bm1"
+      ],
+      "tests": [
+        "docs/evidence/P3-mvp-exit-review.md",
+        "internal/archtest/p3_exit_evidence_test.go",
+        "integration/fixtures/smoke_tui_test.go",
+        "docs/evidence/P3-tui-shell-jr7.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Phase 3 MUST deliver the Section 50 MVP: both archetypes with `profiles = []`, reduced generated CI, TUI matrices green, `foundry-smoke-tui` and `worktree-statu",
+      "spec_verification": "MVP acceptance matrix; recorded agent evidence"
+    },
+    {
+      "id": "REQ-244",
+      "phase": "P4",
+      "owning_beads": [
+        "go-foundry-cli-7fm",
+        "go-foundry-cli-sek",
+        "go-foundry-cli-chf"
+      ],
+      "tests": [
+        "docs/evidence/P4-exit-review.md",
+        "docs/evidence/P4-distribution-profile.md",
+        "docs/evidence/self-distribution.md",
+        "internal/catalog/distribution_tree_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Phase 4 MUST deliver the `distribution` profile end-to-end (scratch-repository release dogfood incl. the license-before-publication step and private/non-GitHub ",
+      "spec_verification": "Release snapshot; distribution dogfood record"
+    },
+    {
+      "id": "REQ-245",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-vu8",
+        "go-foundry-cli-bm1"
+      ],
+      "tests": [
+        "docs/evidence/dogfood-cli-smoke.md",
+        "docs/evidence/dogfood-cli-repo-map.md",
+        "integration/dogfood/smoke_test.go",
+        "integration/dogfood/repo_map_test.go",
+        "scripts/dogfood-cli.sh",
+        "integration/dogfood/product_matrix_test.go",
+        "docs/evidence/product-e2e-linux.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "Dogfooding MUST proceed in order through `foundry-smoke-cli`, `foundry-smoke-tui`, then real `repo-map` and `worktree-status`; dogfood repositories stay indepen",
+      "spec_verification": "Repository inspection; recorded dogfood reports"
+    },
+    {
+      "id": "REQ-246",
+      "phase": "P3",
+      "owning_beads": [
+        "go-foundry-cli-k0o"
+      ],
+      "tests": [
+        "docs/evidence/three-agent-acceptance.md",
+        "docs/evidence/three-agent/k0o-cli-change.txt",
+        "docs/evidence/dogfood-tui-smoke.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "Grok Build, Codex, and Cursor MUST each complete the six recorded Section 52.3 scenarios (orient, CLI change, TUI change, repair, boundary decision, report) on ",
+      "spec_verification": "Recorded agent task reports and diffs"
+    },
+    {
+      "id": "REQ-247",
+      "phase": "P2",
+      "owning_beads": [
+        "go-foundry-cli-vu8",
+        "go-foundry-cli-bm1",
+        "go-foundry-cli-bjt",
+        "go-foundry-cli-j8h.1"
+      ],
+      "tests": [
+        "docs/evidence/dogfood-cli-smoke.md",
+        "docs/evidence/dogfood-cli-repo-map.md",
+        "docs/evidence/perf/summary.md",
+        "integration/dogfood/smoke_test.go",
+        "integration/dogfood/repo_map_test.go",
+        "integration/dogfood/product_matrix_test.go"
+      ],
+      "status": "verified",
+      "last_update": "2026-08-01",
+      "summary": "Dogfood MUST record the Section 52.2 measurements \u2014 orientation/edit metrics, retained/deleted files, first-feature diff, latency, PR CI latency, escaped defect",
+      "spec_verification": "Dogfood measurement records; trigger-review records"
+    },
+    {
+      "id": "REQ-248",
+      "phase": "S6",
+      "owning_beads": [
+        "go-foundry-cli-o60",
+        "go-foundry-cli-hme",
+        "go-foundry-cli-dlv.1"
+      ],
+      "tests": [
+        "docs/02-definitive-foundry-specification-revised-fable-5.md",
+        "AGENTS.md",
+        "docs/evidence/P4-exit-review.md",
+        "docs/evidence/P3-mvp-exit-review.md"
+      ],
+      "status": "verified",
+      "last_update": "2026-07-31",
+      "summary": "This artifact is the implementation authority; Phase 1 is authorized immediately, gated phases MUST NOT proceed without their Section 51.2 evidence records, a c",
+      "spec_verification": "Program artifact workflow; phase-table inspection"
+    }
+  ]
+}

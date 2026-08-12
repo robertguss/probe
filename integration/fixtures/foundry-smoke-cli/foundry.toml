@@ -1,0 +1,10 @@
+# foundry-smoke-cli — Foundry-owned disposable CLI smoke fixture (REQ-066 / REQ-242).
+# profiles = [] only. Destination basename MUST equal name.
+# Not a user example: see examples/minimal-cli.toml for copy-paste product specs.
+schema = 1
+name = "foundry-smoke-cli"
+module = "github.com/example/foundry-smoke-cli"
+description = "Foundry smoke CLI fixture for generate determinism and extension-path tests"
+archetype = "cli"
+destination = "./foundry-smoke-cli"
+profiles = []

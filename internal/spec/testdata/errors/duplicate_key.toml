@@ -1,0 +1,10 @@
+# Expected error id: spec.duplicate_key
+# Cause: duplicate top-level key `schema`.
+schema = 1
+schema = 1
+name = "duplicate-key"
+module = "github.com/example/duplicate-key"
+description = "Duplicate key fixture"
+archetype = "cli"
+destination = "./duplicate-key"
+profiles = []

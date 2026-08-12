@@ -1,0 +1,14 @@
+date: 2026-07-30T20:21:44Z
+uname: Linux dev-box 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+os-release: Ubuntu 24.04.4 LTS
+go: go version go1.26.5 linux/amd64
+x/sys: golang.org/x/sys v0.34.0
+E1_FS_ROOTS=ext4:/tmp/e1-matrix-3247683/mnt/host,xfs:/tmp/e1-matrix-3247683/mnt/xfs,btrfs:/tmp/e1-matrix-3247683/mnt/btrfs,vfat:/tmp/e1-matrix-3247683/mnt/vfat
+TARGET SOURCE    FSTYPE OPTIONS
+/      /dev/sda1 ext4   rw,relatime
+TARGET                         SOURCE     FSTYPE OPTIONS
+/tmp/e1-matrix-3247683/mnt/xfs /dev/loop0 xfs    rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota
+TARGET                           SOURCE     FSTYPE OPTIONS
+/tmp/e1-matrix-3247683/mnt/btrfs /dev/loop1 btrfs  rw,relatime,ssd,discard=async,space_cache=v2,subvolid=5,subvol=/
+TARGET                          SOURCE     FSTYPE OPTIONS
+/tmp/e1-matrix-3247683/mnt/vfat /dev/loop2 vfat   rw,relatime,uid=1000,gid=1000,fmask=0077,dmask=0077,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro

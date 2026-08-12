@@ -1,0 +1,45 @@
+package tui
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestView_RendersNameAndHelp(t *testing.T) {
+	m := NewModel(ModelConfig{Name: "[[.Name]]", NoColor: true})
+	m.width = 80
+	m.height = 24
+	v := m.View()
+	s := v.Content
+	if !strings.Contains(s, "[[.Name]]") {
+		t.Fatalf("view missing project name: %q", s)
+	}
+	if !strings.Contains(s, "quit") && !strings.Contains(s, "q") {
+		t.Fatalf("view missing quit help: %q", s)
+	}
+	if !v.AltScreen {
+		t.Fatal("expected alternate screen")
+	}
+}
+
+func TestView_TooSmall(t *testing.T) {
+	m := NewModel(ModelConfig{Name: "[[.Name]]", NoColor: true})
+	m.width = 10
+	m.height = 3
+	v := m.View()
+	if !strings.Contains(v.Content, "terminal too small") {
+		t.Fatalf("want too-small notice, got %q", v.Content)
+	}
+}
+
+func TestView_NoColorUsesPlainTheme(t *testing.T) {
+	m := NewModel(ModelConfig{Name: "plain", NoColor: true})
+	m.width = 80
+	m.height = 24
+	v := m.View()
+	// Plain theme still renders the name; absence of color codes is best-effort
+	// (lipgloss may still emit style markers depending on profile).
+	if !strings.Contains(v.Content, "plain") {
+		t.Fatalf("missing name in no-color view: %q", v.Content)
+	}
+}

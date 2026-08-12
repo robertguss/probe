@@ -1,0 +1,9 @@
+# Expected error id: (none — hostile plain-data success path)
+# include-like tokens in description are plain data, not evaluated.
+schema = 1
+name = "include-like"
+module = "github.com/example/include-like"
+description = "include other.toml and #include are plain data"
+archetype = "cli"
+destination = "./include-like"
+profiles = []

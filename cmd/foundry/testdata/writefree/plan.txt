@@ -1,0 +1,64 @@
+# Write-free e2e: plan (authoritative dry run) — schema, verify modes, sha stability.
+
+# Text summary includes project + plan_sha256 + verify mode + file/deps lists.
+exec foundry plan --spec examples/minimal-cli.toml
+stdout 'plan:'
+stdout 'project=minimal-cli'
+stdout 'plan_sha256='
+stdout 'verify: default'
+stdout 'files: 21'
+stdout 'dependencies:'
+stdout 'external_steps:'
+stdout 'go_pin:'
+! stderr .
+dump_digest stdout
+
+# JSON schema 1 Generation Plan document inside envelope.
+exec foundry plan --spec examples/minimal-cli.toml --output json
+stdout '"schema":1'
+stdout '"command":"plan"'
+stdout '"ok":true'
+stdout '"plan_sha256"'
+stdout '"external_steps"'
+stdout '"verification"'
+stdout '"files"'
+! stderr .
+cp stdout plan_default.json
+dump_digest plan_default.json
+
+# plan_sha256 stable across two consecutive runs in the same workdir/env.
+exec foundry plan --spec examples/minimal-cli.toml --output json
+cp stdout plan_default_2.json
+assert_plan_sha256_eq plan_default.json plan_default_2.json
+
+# --verify strict differs from default (step list + plan_sha256).
+exec foundry plan --spec examples/minimal-cli.toml --verify strict --output json
+stdout '"mode":"strict"'
+stdout 'go-staticcheck'
+stdout 'go-govulncheck'
+! stderr .
+cp stdout plan_strict.json
+assert_plan_sha256_ne plan_default.json plan_strict.json
+
+# validate and plan share pipeline: same plan_sha256 for same fixture.
+exec foundry validate --spec examples/minimal-cli.toml --output json
+cp stdout validate.json
+assert_plan_sha256_eq plan_default.json validate.json
+
+# TUI plans (catalog present).
+exec foundry plan --spec examples/minimal-tui.toml
+stdout 'plan:'
+stdout 'plan_sha256='
+! stderr .
+
+# Invalid plan fails with exact id (same path as validate).
+! exec foundry plan --spec examples/invalid-unknown-field.toml
+stderr 'spec.unknown_field'
+assert_error_id stderr spec.unknown_field
+
+# dest override is non-binding: no directory created under $WORK/out.
+mkdir out
+exec foundry plan --spec examples/minimal-cli.toml --dest ./out/minimal-cli
+stdout 'plan:'
+! exists out/minimal-cli
+list_tree out

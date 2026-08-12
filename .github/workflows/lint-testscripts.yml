@@ -1,0 +1,38 @@
+# Lint foundry testscript fixtures (bead go-foundry-cli-wet.5.5).
+#
+# Checks:
+#   - registered custom commands are used at least once
+#   - custom commands are not negated
+#   - warns on `! exec foundry ...` and missing `assert_exit_code`
+#   - flags unknown command words
+
+name: lint-testscripts
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Cancel superseded runs of the same ref.
+concurrency:
+  group: foundry-lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint-testscripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Lint testscript fixtures
+        run: python3 scripts/lint-testscripts.py

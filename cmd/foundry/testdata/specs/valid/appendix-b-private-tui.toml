@@ -1,0 +1,11 @@
+# Appendix B — Private TUI
+# SPEC-FOUNDRY-002 canonical example. Used for decode+validate goldens.
+schema = 1
+name = "worktree-status"
+module = "github.com/robertguss/worktree-status"
+description = "Git worktree status TUI with asynchronous refresh"
+archetype = "tui"
+destination = "/Users/robertguss/Projects/tools/worktree-status"
+
+[git]
+initial_branch = "main"

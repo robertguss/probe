@@ -1,0 +1,3 @@
+?   	github.com/example/foundry-smoke-tui/cmd/foundry-smoke-tui	[no test files]
+ok  	github.com/example/foundry-smoke-tui/internal/tui	0.012s
+ok  	github.com/example/foundry-smoke-tui/internal/version	0.005s

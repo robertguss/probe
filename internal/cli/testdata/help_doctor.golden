@@ -1,0 +1,24 @@
+doctor reports the catalog Go pin, this Foundry binary's runtime Go version,
+FOUNDRY_GO_BIN, PATH's go (LookPath), and whether a pinned go1.x binary is
+discoverable for generate. It is advisory: exit 0 even on warnings so scripts
+can print guidance without failing validate/plan.
+
+doctor may probe candidate go binaries with a closed GOTOOLCHAIN=local
+environment (the same probe generate uses). It does not write files or use
+the network.
+
+Examples:
+  foundry doctor
+  foundry doctor --output json
+
+Usage:
+  foundry doctor [flags]
+
+Flags:
+  -h, --help   help for doctor
+
+Global Flags:
+      --color string    color mode: auto|always|never (text mode only) (default "auto")
+      --output string   output mode: text|json (default "text")
+      --quiet           suppress non-essential human output (text mode only)
+      --verbose         diagnostic detail on stderr (text mode only)

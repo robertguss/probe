@@ -1,0 +1,79 @@
+{
+  "retrieved_at": "2026-07-30T20:45:03Z",
+  "actions": [
+    {
+      "repo": "actions/checkout",
+      "tag": "v5.1.0",
+      "sha": "fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+      "status": "OK"
+    },
+    {
+      "repo": "actions/setup-go",
+      "tag": "v6.5.0",
+      "sha": "924ae3a1cded613372ab5595356fb5720e22ba16",
+      "status": "OK"
+    },
+    {
+      "repo": "actions/upload-artifact",
+      "tag": "v5.0.0",
+      "sha": "330a01c490aca151604b8cf639adc76d48f6c5d4",
+      "status": "OK"
+    },
+    {
+      "repo": "actions/download-artifact",
+      "tag": "v5.0.0",
+      "sha": "634f93cb2916e3fdff6788551b99b062d0335ce0",
+      "status": "OK"
+    },
+    {
+      "repo": "actions/dependency-review-action",
+      "tag": "v4.9.0",
+      "sha": "2031cfc080254a8a887f58cffee85186f0e49e48",
+      "status": "OK"
+    },
+    {
+      "repo": "actions/attest-build-provenance",
+      "tag": "v3.2.0",
+      "sha": "96278af6caaf10aea03fd8d33a09a777ca52d62f",
+      "status": "OK"
+    },
+    {
+      "repo": "goreleaser/goreleaser-action",
+      "tag": "v6.4.0",
+      "sha": "e435ccd777264be153ace6237001ef4d979d3a7a",
+      "status": "OK"
+    },
+    {
+      "repo": "anchore/sbom-action",
+      "tag": "v0.20.11",
+      "sha": "43a17d6e7add2b5535efe4dcae9952337c479a93",
+      "status": "OK"
+    }
+  ],
+  "tools": [
+    {
+      "repo": "golang/go",
+      "tag": "go1.26.5",
+      "sha": "c19862e5f8415b4f24b189d065ed739517c548ba",
+      "status": "OK"
+    },
+    {
+      "repo": "goreleaser/goreleaser",
+      "tag": "v2.17.1",
+      "sha": "83f4c19a5c5c0b9efef6bf2aedc6805bbcb9dfe2",
+      "status": "OK"
+    },
+    {
+      "repo": "anchore/syft",
+      "tag": "v1.44.0",
+      "sha": "8cb78ce40ced6a731fb83f2a491a67444f541bf1",
+      "status": "OK"
+    },
+    {
+      "repo": "dominikh/go-tools",
+      "tag": "2026.1",
+      "sha": "ff63afafc529279f454e02f1d060210bd4263951",
+      "status": "OK"
+    }
+  ]
+}

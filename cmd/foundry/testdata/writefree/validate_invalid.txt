@@ -1,0 +1,59 @@
+# Write-free e2e: validate failures — exact error ids (examples + specs).
+
+# examples/ invalids (5an.2 product surface).
+! exec foundry validate --spec examples/invalid-unknown-field.toml
+stderr 'spec.unknown_field'
+assert_error_id stderr spec.unknown_field
+
+! exec foundry validate --spec examples/invalid-bad-name.toml
+stderr 'spec.invalid_field'
+assert_error_id stderr spec.invalid_field
+
+! exec foundry validate --spec examples/invalid-bad-profile.toml
+stderr 'resolve.unknown_profile'
+stderr 'available profiles'
+assert_error_id stderr resolve.unknown_profile
+
+# JSON form: envelope on stdout, empty stderr, stable error_id.
+! exec foundry validate --spec examples/invalid-unknown-field.toml --output json
+stdout 'spec.unknown_field'
+stdout '"ok":false'
+! stderr .
+assert_error_id stdout spec.unknown_field
+
+# specs/invalid Appendix D coverage (process boundary).
+! exec foundry validate --spec specs/invalid/parse_error.toml
+stderr 'spec.parse_error'
+assert_error_id stderr spec.parse_error
+
+! exec foundry validate --spec specs/invalid/unsupported_schema.toml
+stderr 'spec.unsupported_schema'
+assert_error_id stderr spec.unsupported_schema
+
+! exec foundry validate --spec specs/invalid/unknown_field.toml
+stderr 'spec.unknown_field'
+assert_error_id stderr spec.unknown_field
+
+! exec foundry validate --spec specs/invalid/duplicate_key.toml
+stderr 'spec.duplicate_key'
+assert_error_id stderr spec.duplicate_key
+
+! exec foundry validate --spec specs/invalid/invalid_field.toml
+stderr 'spec.invalid_field'
+assert_error_id stderr spec.invalid_field
+
+! exec foundry validate --spec specs/invalid/duplicate_profile.toml
+stderr 'spec.duplicate_profile'
+assert_error_id stderr spec.duplicate_profile
+
+! exec foundry validate --spec specs/invalid/nested_unknown_table.toml
+stderr 'spec.unknown_field'
+assert_error_id stderr spec.unknown_field
+
+! exec foundry validate --spec specs/invalid/hostile_env_destination.toml
+stderr 'spec.invalid_field'
+assert_error_id stderr spec.invalid_field
+
+# Missing --spec is usage (exit 2).
+! exec foundry validate
+stderr 'usage.invalid|required flag|spec'

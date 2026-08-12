@@ -1,0 +1,8 @@
+# Appendix B — Private CLI (MVP shape)
+# SPEC-FOUNDRY-002 canonical example. Used for decode+validate goldens.
+schema = 1
+name = "repo-map"
+module = "github.com/robertguss/repo-map"
+description = "Repository inventory CLI with text and JSON output"
+archetype = "cli"
+destination = "/Users/robertguss/Projects/tools/repo-map"

@@ -1,0 +1,20 @@
+# Minimal private TUI — shape-valid Project Spec (SPEC-FOUNDRY-002 Appendix B).
+# Schema is complete and strict; do not weaken fields for early phases.
+#
+# Phase 1 behavior (until TUI catalog content lands in Phase 3):
+#   - `foundry validate` accepts this document (spec field contract only), OR
+#   - the pure pipeline (validate≡plan path) may reject at resolution with an
+#     exact machine-readable error if the embedded TUI archetype is not yet
+#     available — e2e treats either full plan success OR that exact error as OK.
+# Phase 3+: validate + plan + generate succeed with profiles = [].
+schema = 1
+name = "minimal-tui"
+module = "github.com/example/minimal-tui"
+description = "Minimal Foundry TUI example for validate, plan, and generate"
+archetype = "tui"
+destination = "./minimal-tui"
+profiles = []
+
+[git]
+init = true
+initial_branch = "main"

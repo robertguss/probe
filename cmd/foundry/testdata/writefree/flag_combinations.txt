@@ -1,0 +1,140 @@
+# Write-free e2e: flag combination matrix (bead go-foundry-cli-wet.2.2).
+# Exercises high-value combinations of --quiet, --verbose, --color, --output,
+# --verify, and --dest across subcommands. Invalid combos assert error class
+# and exit code 2.
+
+# --- --quiet suppresses non-essential human output (text mode) ---
+exec foundry validate --spec examples/minimal-cli.toml --quiet
+! stdout .
+! stderr .
+
+exec foundry plan --spec examples/minimal-cli.toml --quiet
+! stdout .
+! stderr .
+
+exec foundry catalog list --quiet
+! stdout .
+! stderr .
+
+exec foundry catalog show core --quiet
+! stdout .
+! stderr .
+
+# --- --verbose emits diagnostic detail on stderr ---
+exec foundry validate --spec examples/minimal-cli.toml --verbose
+stdout 'plan_sha256'
+stdout 'validate: ok'
+
+exec foundry plan --spec examples/minimal-cli.toml --verbose
+stdout 'plan_sha256'
+stdout 'plan: project='
+stdout 'files:'
+stdout 'dependencies:'
+
+# --- generate flag surface: invalid combinations rejected before staging ---
+mkdir $WORK/bad-gen
+! exec foundry generate --spec examples/minimal-cli.toml --dest $WORK/bad-gen/wrong-basename --quiet --verbose
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+# --- --color never/auto/always accepted per subcommand ---
+exec foundry validate --spec examples/minimal-cli.toml --color never
+stdout 'validate: ok'
+
+exec foundry plan --spec examples/minimal-cli.toml --color auto
+stdout 'plan: project='
+stdout 'files:'
+stdout 'dependencies:'
+
+exec foundry catalog list --color always
+! stderr .
+
+exec foundry catalog show core --color never
+! stderr .
+
+# --- --output json on catalog show / validate / plan ---
+exec foundry catalog show core --output json
+stdout '"ok":true'
+stdout '"id":"core"'
+
+exec foundry validate --spec examples/minimal-cli.toml --output json
+stdout '"ok":true'
+stdout '"command":"validate"'
+
+exec foundry plan --spec examples/minimal-cli.toml --output json
+stdout '"ok":true'
+stdout '"command":"plan"'
+
+# --- --verify default|strict on plan; invalid on validate ---
+exec foundry plan --spec examples/minimal-cli.toml --verify default --output json
+stdout '"ok":true'
+stdout '"mode":"default"'
+
+exec foundry plan --spec examples/minimal-cli.toml --verify strict --output json
+stdout '"ok":true'
+stdout '"mode":"strict"'
+
+! exec foundry validate --spec examples/minimal-cli.toml --verify default
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+! exec foundry validate --spec examples/minimal-cli.toml --verify strict
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+# --- --dest override on validate and plan ---
+mkdir $WORK/dest-validate
+exec foundry validate --spec examples/minimal-cli.toml --dest $WORK/dest-validate/minimal-cli
+stdout 'validate: ok'
+
+mkdir $WORK/dest-plan
+exec foundry plan --spec examples/minimal-cli.toml --dest $WORK/dest-plan/minimal-cli --output json
+stdout '"ok":true'
+stdout '"basename":"minimal-cli"'
+
+# --- invalid flag values assert usage.invalid / exit code 2 ---
+! exec foundry validate --spec examples/minimal-cli.toml --color rainbow
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+! exec foundry plan --spec examples/minimal-cli.toml --verify bogus
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+! exec foundry catalog show core --output yaml
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+# --- conflicting verbosity flags ---
+! exec foundry validate --spec examples/minimal-cli.toml --quiet --verbose
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+! exec foundry plan --spec examples/minimal-cli.toml --quiet --verbose
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+! exec foundry generate --spec examples/minimal-cli.toml --dest $WORK/conflict-gen --quiet --verbose
+stderr 'usage.invalid'
+assert_error_id stderr usage.invalid
+
+# --- JSON mode rejects human-mode verbosity/color flags ---
+assert_exit_code 2 foundry validate --spec examples/minimal-cli.toml --output json --quiet
+! stderr .
+stdout '"ok":false'
+stdout 'usage.invalid'
+
+assert_exit_code 2 foundry validate --spec examples/minimal-cli.toml --output json --verbose
+! stderr .
+stdout '"ok":false'
+stdout 'usage.invalid'
+
+assert_exit_code 2 foundry plan --spec examples/minimal-cli.toml --output json --color never
+! stderr .
+stdout '"ok":false'
+stdout 'usage.invalid'
+
+assert_exit_code 2 foundry catalog show core --output json --color auto
+! stderr .
+stdout '"ok":false'
+stdout 'usage.invalid'

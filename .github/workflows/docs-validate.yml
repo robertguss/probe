@@ -1,0 +1,44 @@
+# Validate command examples and error IDs in docs (bead go-foundry-cli-wet.5.8).
+#
+# - Extracts fenced shell commands from docs/recipes, docs/dev, and README.md.
+# - Runs each command that invokes `foundry` against a freshly built binary.
+# - Verifies that every error-ID-looking string in the docs exists in
+#   internal/diagnostic/ids.go.
+
+name: docs-validate
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Cancel superseded runs of the same ref.
+concurrency:
+  group: foundry-docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: docs-validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0 — toolchain from go.mod (1.26.5)
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Validate docs
+        run: python3 scripts/validate-docs.py

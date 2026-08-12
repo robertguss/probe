@@ -1,0 +1,45 @@
+# distribution profile — public binary-release scaffolding (Section 20 / REQ-076).
+# Selectable in Phase 4 when visibility=public and module is github.com/owner/name.
+# No go.mod runtime contributions. License is NOT generated (FND-019).
+schema = 1
+id = "distribution"
+kind = "profile"
+description = "Complete public binary-release scaffolding (post-MVP)"
+compatible_archetypes = ["cli", "tui"]
+requires_visibility = "public"
+
+[[files]]
+path = "docs/releasing.md"
+render = "static"
+source = "files/releasing.md"
+mode = "0644"
+
+[[files]]
+path = "CONTRIBUTING.md"
+render = "template"
+source = "files/CONTRIBUTING.md.tmpl"
+mode = "0644"
+
+[[files]]
+path = "SECURITY.md"
+render = "template"
+source = "files/SECURITY.md.tmpl"
+mode = "0644"
+
+[[files]]
+path = ".github/workflows/release.yml"
+render = "template"
+source = "files/workflows/release.yml.tmpl"
+mode = "0644"
+
+[[files]]
+path = ".github/workflows/dependency-review.yml"
+render = "template"
+source = "files/workflows/dependency-review.yml.tmpl"
+mode = "0644"
+
+[[files]]
+path = ".goreleaser.yaml"
+render = "template"
+source = "files/goreleaser.yaml.tmpl"
+mode = "0644"

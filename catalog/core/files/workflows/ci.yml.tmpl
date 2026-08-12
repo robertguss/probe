@@ -1,0 +1,60 @@
+# Generated Core CI — one required Linux PR/default job (Section 16.6 / REQ-063).
+# Action pins match catalog/versions.toml (full commit SHA + tag comment).
+# Project: [[.Name]]
+
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+# Cancel superseded runs of the same ref (Section 16.6).
+concurrency:
+  group: ci-[[.Name]]-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Exactly one required job: format, mod verify, uncached tests, vet, Staticcheck.
+  check:
+    name: linux
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+      CI: "true"
+    steps:
+      - name: Checkout
+        # actions/checkout v5.1.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Go
+        # actions/setup-go v6.5.0 — toolchain from go.mod
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Format check
+        run: |
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then
+            echo "gofmt needed on:"
+            echo "$out"
+            exit 1
+          fi
+
+      - name: Module verify
+        run: go mod verify
+
+      - name: Test
+        run: go test -count=1 ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Staticcheck
+        run: go tool staticcheck ./...

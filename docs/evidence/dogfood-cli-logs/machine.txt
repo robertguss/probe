@@ -1,0 +1,12 @@
+hostname=dev-box
+date_utc=2026-07-31T03:48:20Z
+os=Linux
+kernel=6.8.0-134-generic
+arch=x86_64
+go=go version go1.26.5 linux/amd64
+git=git version 2.43.0
+pretty=Ubuntu 24.04.4 LTS
+foundry v0.0.0-20260731034008-c95d6364b5c5+dirty
+commit: c95d6364b5c55fb685a437746092fa4976cf7f26-dirty
+go: go1.26.5
+catalog_digest: fba7cd432c37bbe7e30fe5e4ff46034d381a14ff6e48ee7085e957ab028985d8

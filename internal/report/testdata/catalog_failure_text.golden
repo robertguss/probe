@@ -1,0 +1,2 @@
+foundry: catalog.invalid: catalog unit "nope" not found; available units: [cli, core] (at nope)
+  remediation: Use an exact unit id from the available set [cli, core]. Run `foundry catalog list` to inspect embedded catalog units.

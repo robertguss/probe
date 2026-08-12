@@ -1,0 +1,7 @@
+3:--- PASS: TestArchitecture (0.12s)
+24:--- PASS: TestP1QualitySuperSuite (0.13s)
+29:--- PASS: TestWriteFreePurityStatic (0.01s)
+35:--- PASS: TestP1RegistryDomainsComplete (0.00s)
+42:--- PASS: TestArchitectureCheckIncludesPurityAndGolden (0.13s)
+50:--- PASS: TestSection58MechanicalGreen (0.07s)
+51:PASS

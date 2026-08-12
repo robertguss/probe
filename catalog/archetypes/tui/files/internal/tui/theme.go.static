@@ -1,0 +1,23 @@
+package tui
+
+import "charm.land/lipgloss/v2"
+
+// Theme centralizes Lip Gloss styles for the shell (Section 18.4).
+type Theme struct {
+	Title lipgloss.Style
+	Body  lipgloss.Style
+}
+
+// DefaultTheme returns styles for color or --no-color (plain) mode.
+func DefaultTheme(noColor bool) Theme {
+	if noColor {
+		return Theme{
+			Title: lipgloss.NewStyle().Bold(true),
+			Body:  lipgloss.NewStyle(),
+		}
+	}
+	return Theme{
+		Title: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")),
+		Body:  lipgloss.NewStyle().Foreground(lipgloss.Color("7")),
+	}
+}
