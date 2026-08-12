@@ -100,30 +100,6 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 		t.Fatalf("id=%q", id)
 	}
 
-	id2, err := e2.persistExchange(sp, "header", savedRequestFile{
-		Method:  "GET",
-		URL:     "https://ex.test/y",
-		Headers: map[string]string{"X-API-Key": "super-secret-apikey-value", "Accept": "application/json"},
-		Auth:    "custom",
-	}, savedResponseFile{
-		Status:  200,
-		Headers: map[string]string{"Content-Type": "application/json"},
-		Body:    `{}`,
-	}, 3, "X-API-Key")
-	if err != nil {
-		t.Fatal(err)
-	}
-	headerBytes, err := os.ReadFile(filepath.Join(sp.Requests, id2+".json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(headerBytes), "super-secret-apikey-value") {
-		t.Fatalf("custom header secret in request artifact: %s", headerBytes)
-	}
-	if !strings.Contains(string(headerBytes), "[REDACTED]") {
-		t.Fatalf("expected custom header redaction: %s", headerBytes)
-	}
-
 	reqBytes, err := os.ReadFile(filepath.Join(sp.Requests, "001-courses.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -178,5 +154,42 @@ func TestInitIdempotent(t *testing.T) {
 	r2 := e.Run(context.Background(), []string{"init", "--json"})
 	if r1.ExitCode != ExitSuccess || r2.ExitCode != ExitSuccess {
 		t.Fatalf("exits %d %d", r1.ExitCode, r2.ExitCode)
+	}
+}
+
+func TestPersistRedactsExtraAuthHeader(t *testing.T) {
+	dir := t.TempDir()
+	var out bytes.Buffer
+	e := New(Options{
+		Stdout:   &out,
+		Getwd:    func() (string, error) { return dir, nil },
+		SpikeDir: filepath.Join(dir, ".probe"),
+	})
+	if res := e.Run(context.Background(), []string{"init", "--json"}); res.ExitCode != ExitSuccess {
+		t.Fatalf("init exit=%d", res.ExitCode)
+	}
+	sp := spikePathsFor(filepath.Join(dir, ".probe"))
+	id, err := e.persistExchange(sp, "header", savedRequestFile{
+		Method:  "GET",
+		URL:     "https://ex.test/y",
+		Headers: map[string]string{"X-API-Key": "super-secret-apikey-value", "Accept": "application/json"},
+		Auth:    "custom",
+	}, savedResponseFile{
+		Status:  200,
+		Headers: map[string]string{"Content-Type": "application/json"},
+		Body:    `{}`,
+	}, 3, "X-API-Key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	headerBytes, err := os.ReadFile(filepath.Join(sp.Requests, id+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(headerBytes), "super-secret-apikey-value") {
+		t.Fatalf("custom header secret in request artifact: %s", headerBytes)
+	}
+	if !strings.Contains(string(headerBytes), "[REDACTED]") {
+		t.Fatalf("expected custom header redaction: %s", headerBytes)
 	}
 }
