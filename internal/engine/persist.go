@@ -248,6 +248,101 @@ func (e *Engine) summary(_ context.Context) Result {
 	return e.ok("summary", summaryData{LastID: sess.LastID, NextID: sess.NextID, Requests: n})
 }
 
+func (e *Engine) replay(ctx context.Context, id string) Result {
+	sp, res, ok := e.requireSpike()
+	if !ok {
+		res.Envelope.Command = "replay"
+		return res
+	}
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return e.usageError("replay", "missing request id", "probe replay 001-courses --json")
+	}
+	if !strings.HasSuffix(id, ".json") {
+		// allow bare id
+	} else {
+		id = strings.TrimSuffix(id, ".json")
+	}
+	path := filepath.Join(sp.Requests, id+".json")
+	if _, err := os.Stat(path); err != nil {
+		matches, _ := filepath.Glob(filepath.Join(sp.Requests, "*"+id+"*.json"))
+		if len(matches) == 1 {
+			id = strings.TrimSuffix(filepath.Base(matches[0]), ".json")
+			path = matches[0]
+		} else {
+			return e.fail("replay", ExitUsage, "not_found", fmt.Sprintf("request %q not found", id), "probe last --json", []string{"probe last --json"})
+		}
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return e.fail("replay", ExitTransport, "transport", err.Error(), "", nil)
+	}
+	var req savedRequestFile
+	if err := json.Unmarshal(b, &req); err != nil {
+		return e.fail("replay", ExitTransport, "transport", err.Error(), "", nil)
+	}
+	in := HitInput{
+		Method:  req.Method,
+		URL:     req.URL,
+		Auth:    req.Auth,
+		Body:    req.Body,
+		Save:    "replay",
+		Retries: 2,
+		Timeout: 30 * time.Second,
+		MaxWait: 60 * time.Second,
+		MaxBody: 1 << 20,
+		Follow:  strings.EqualFold(req.Method, "GET"),
+	}
+	for k, v := range req.Headers {
+		if strings.EqualFold(k, "Authorization") || strings.EqualFold(k, "Cookie") {
+			continue
+		}
+		in.Headers = append(in.Headers, k+":"+v)
+	}
+	return e.hit(ctx, in)
+}
+
+func (e *Engine) find(_ context.Context, hint string) Result {
+	sp, res, ok := e.requireSpike()
+	if !ok {
+		res.Envelope.Command = "find"
+		return res
+	}
+	hint = strings.TrimSpace(hint)
+	if hint == "" {
+		return e.usageError("find", "missing path hint", "probe find courses --json")
+	}
+	entries, err := os.ReadDir(sp.Requests)
+	if err != nil {
+		return e.fail("find", ExitTransport, "transport", err.Error(), "", nil)
+	}
+	type hit struct {
+		ID     string `json:"id"`
+		Method string `json:"method"`
+		URL    string `json:"url"`
+	}
+	var found []hit
+	h := strings.ToLower(hint)
+	for _, ent := range entries {
+		if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".json") {
+			continue
+		}
+		id := strings.TrimSuffix(ent.Name(), ".json")
+		b, err := os.ReadFile(filepath.Join(sp.Requests, ent.Name()))
+		if err != nil {
+			continue
+		}
+		var req savedRequestFile
+		if err := json.Unmarshal(b, &req); err != nil {
+			continue
+		}
+		if strings.Contains(strings.ToLower(id), h) || strings.Contains(strings.ToLower(req.URL), h) || strings.Contains(strings.ToLower(req.Method), h) {
+			found = append(found, hit{ID: id, Method: req.Method, URL: req.URL})
+		}
+	}
+	return e.ok("find", map[string]any{"hint": hint, "matches": found})
+}
+
 func (e *Engine) lastExchange(_ context.Context) Result {
 	sp, res, ok := e.requireSpike()
 	if !ok {
