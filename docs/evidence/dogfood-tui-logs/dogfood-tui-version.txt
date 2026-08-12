@@ -1,4 +1,0 @@
-foundry 0.1.0
-commit: -
-go: go1.26.5
-catalog_digest: 59af95f4e28ce9672451c35d818366dd04012b48c14110efd4a5eb8acebd6f95

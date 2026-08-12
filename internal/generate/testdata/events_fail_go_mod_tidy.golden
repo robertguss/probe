@@ -1,6 +1,0 @@
-state||stage-created||transition
-progress|render|stage-created|
-state||rendered||transition
-progress|go-mod-tidy|rendered|
-state||failed-preserved||failure
-terminal||failed-preserved|failed-preserved|terminal|stage_path=.foundry-demo-deadbeef

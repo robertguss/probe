@@ -1,2 +1,0 @@
-foundry: plan.file_collision: file "go.mod" claimed by core and cli (at go.mod)
-  remediation: Resolve the file ownership collision: remove or rename one of the conflicting contributions so each output path has a single owner. The error names every claimant.

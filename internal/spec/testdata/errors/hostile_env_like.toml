@@ -1,9 +1,0 @@
-# Expected error id: (none — hostile plain-data success path)
-# env-like tokens in description are plain data; destination with $ is invalid_field.
-schema = 1
-name = "env-like"
-module = "github.com/example/env-like"
-description = "Uses ${HOME} and $PATH as plain text not env expansion"
-archetype = "cli"
-destination = "./env-like"
-profiles = []

@@ -1,3 +1,0 @@
-network disclosure:
-  go-mod-tidy: module resolution during go mod tidy on cold caches
-  go-govulncheck: vulnerability database access during go tool govulncheck

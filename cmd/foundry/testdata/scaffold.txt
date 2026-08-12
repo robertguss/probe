@@ -1,7 +1,0 @@
-# Placeholder testscript — not wired yet.
-# Real scripts arrive with P1 write-free e2e (5an.1) and later generate e2e.
-#
-# Expected shape (illustrative only):
-#   exec foundry version
-#   stdout 'foundry'
-#   ! stderr .

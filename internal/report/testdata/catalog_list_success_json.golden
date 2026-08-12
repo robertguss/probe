@@ -1,1 +1,0 @@
-{"schema":1,"command":"catalog list","ok":true,"result":{"catalog_digest":"deadbeefcafebabe000000000000000000000000000000000000000000000000","units":[{"description":"CLI archetype","id":"cli","kind":"archetype","manifest_path":"archetypes/cli/manifest.toml"},{"description":"Core unit","id":"core","kind":"core","manifest_path":"core/manifest.toml"}]},"error":null,"warnings":[]}

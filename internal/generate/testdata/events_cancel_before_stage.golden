@@ -1,8 +1,0 @@
-progress|read-parse-spec||
-progress|validate-spec||
-progress|load-catalog||
-progress|resolve||
-progress|build-plan||
-progress|tool-preflight||
-state||cancelled||cancel
-terminal||cancelled|cancelled|terminal

@@ -1,1 +1,0 @@
-{"schema":1,"command":"catalog show","ok":false,"result":null,"error":{"error_id":"catalog.invalid","message":"catalog unit \"nope\" not found; available units: [cli, core]","remediation":"Use an exact unit id from the available set [cli, core]. Run `foundry catalog list` to inspect embedded catalog units.","path":"nope","location":"nope","exit_code":1},"warnings":[]}

@@ -1,1 +1,0 @@
-ok  	github.com/robertguss/go-foundry-cli/cmd/foundry	74.710s

@@ -1,4 +1,0 @@
-cli	archetype	Conventional CLI project archetype (Cobra command tree)
-core	core	Core toolchain, module layout, docs, CI, Dependabot, and AGENTS for every Generated Project
-distribution	profile	Complete public binary-release scaffolding (post-MVP)
-tui	archetype	Conventional TUI project archetype (Bubble Tea stack)

@@ -1,8 +1,0 @@
-ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e1	0.040s
-ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e2	0.291s
-ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e3	2.517s
-ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e3/knownrace	0.004s
-ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e4	1.705s
-?   	github.com/robertguss/go-foundry-cli/integration/hostile/e4/cmd/e4spike	[no test files]
-ok  	github.com/robertguss/go-foundry-cli/integration/hostile/e5	0.010s
-EXIT:0
