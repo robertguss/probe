@@ -169,7 +169,6 @@ func (e *Engine) persistExchange(sp SpikePaths, id string, req savedRequestFile,
 		return err
 	}
 	sess.LastID = id
-	// next_id advanced by caller when allocating
 	return e.saveSession(sp, sess)
 }
 

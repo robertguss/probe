@@ -165,7 +165,6 @@ func TestHitRetryAfterHonored(t *testing.T) {
 	if len(gaps) != 1 {
 		t.Fatalf("gaps=%v", gaps)
 	}
-	// Retry-After: 0 should not sleep the default 200ms backoff long
 	if gaps[0] > 150*time.Millisecond {
 		t.Fatalf("Retry-After not honored; gap=%v", gaps[0])
 	}

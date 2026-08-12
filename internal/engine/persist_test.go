@@ -53,9 +53,6 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 		t.Fatalf("config auth=%#v", cfg.Auth)
 	}
 	raw, _ := os.ReadFile(sp.Config)
-	if strings.Contains(string(raw), "sk-") || strings.Contains(strings.ToLower(string(raw)), "secret") {
-		// env names only — CANVAS_TOKEN is fine; actual secrets are not
-	}
 	if strings.Contains(string(raw), "Bearer ") {
 		t.Fatalf("secret-like value in config: %s", raw)
 	}
