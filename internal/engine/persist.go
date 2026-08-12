@@ -258,11 +258,7 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 	if id == "" {
 		return e.usageError("replay", "missing request id", "probe replay 001-courses --json")
 	}
-	if !strings.HasSuffix(id, ".json") {
-		// allow bare id
-	} else {
-		id = strings.TrimSuffix(id, ".json")
-	}
+	id = strings.TrimSuffix(id, ".json")
 	path := filepath.Join(sp.Requests, id+".json")
 	if _, err := os.Stat(path); err != nil {
 		matches, _ := filepath.Glob(filepath.Join(sp.Requests, "*"+id+"*.json"))

@@ -180,10 +180,10 @@ func (e *Engine) versionCmd(ctx context.Context) *cobra.Command {
 
 func (e *Engine) quickstartCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "quickstart",
-		Short: "print agent quickstart",
+		Use:     "quickstart",
+		Short:   "print agent quickstart",
 		Example: `  probe quickstart --json`,
-		Args: cobra.NoArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			e.lastResult = e.quickstart(ctx)
 			return nil
@@ -193,10 +193,10 @@ func (e *Engine) quickstartCmd(ctx context.Context) *cobra.Command {
 
 func (e *Engine) schemaCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "schema",
-		Short: "describe command tree and JSON envelope",
+		Use:     "schema",
+		Short:   "describe command tree and JSON envelope",
 		Example: `  probe schema --json`,
-		Args: cobra.NoArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			e.lastResult = e.schema(ctx)
 			return nil
@@ -206,10 +206,10 @@ func (e *Engine) schemaCmd(ctx context.Context) *cobra.Command {
 
 func (e *Engine) doctorCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "doctor",
-		Short: "check workspace and catalog readiness (booleans only)",
+		Use:     "doctor",
+		Short:   "check workspace and catalog readiness (booleans only)",
 		Example: `  probe doctor --json`,
-		Args: cobra.NoArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			e.lastResult = e.doctor(ctx)
 			return nil
@@ -219,10 +219,10 @@ func (e *Engine) doctorCmd(ctx context.Context) *cobra.Command {
 
 func (e *Engine) replayCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "replay <NAME|ID>",
-		Short: "replay a saved request by id",
+		Use:     "replay <NAME|ID>",
+		Short:   "replay a saved request by id",
 		Example: `  probe replay 001-courses --json`,
-		Args: cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			e.lastResult = e.replay(ctx, args[0])
 			return nil
@@ -232,10 +232,10 @@ func (e *Engine) replayCmd(ctx context.Context) *cobra.Command {
 
 func (e *Engine) findCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "find <path.hints>",
-		Short: "search recorded exchanges by id/path hint",
+		Use:     "find <path.hints>",
+		Short:   "search recorded exchanges by id/path hint",
 		Example: `  probe find courses --json`,
-		Args: cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			e.lastResult = e.find(ctx, args[0])
 			return nil

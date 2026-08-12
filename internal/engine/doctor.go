@@ -9,15 +9,15 @@ import (
 )
 
 type doctorData struct {
-	Version           string            `json:"version"`
-	GoVersion         string            `json:"go_version"`
-	ProbeDirExists    bool              `json:"probe_dir_exists"`
-	CatalogRoot       string            `json:"catalog_root"`
-	CatalogWritable   bool              `json:"catalog_writable"`
-	AuthEnv           map[string]bool   `json:"auth_env"`
-	FnoxOnPATH        bool              `json:"fnox_on_path"`
-	LocalEnvGitRisk   bool              `json:"local_env_would_be_tracked"`
-	Hints             []string          `json:"hints,omitempty"`
+	Version         string          `json:"version"`
+	GoVersion       string          `json:"go_version"`
+	ProbeDirExists  bool            `json:"probe_dir_exists"`
+	CatalogRoot     string          `json:"catalog_root"`
+	CatalogWritable bool            `json:"catalog_writable"`
+	AuthEnv         map[string]bool `json:"auth_env"`
+	FnoxOnPATH      bool            `json:"fnox_on_path"`
+	LocalEnvGitRisk bool            `json:"local_env_would_be_tracked"`
+	Hints           []string        `json:"hints,omitempty"`
 }
 
 func (e *Engine) doctor(_ context.Context) Result {
@@ -108,9 +108,9 @@ func gitWouldTrack(cwd, rel string) (tracked bool, ok bool) {
 }
 
 type quickstartData struct {
-	Steps          []string `json:"steps"`
-	RateLimitNote  string   `json:"rate_limit_note"`
-	SecretsNote    string   `json:"secrets_note"`
+	Steps         []string `json:"steps"`
+	RateLimitNote string   `json:"rate_limit_note"`
+	SecretsNote   string   `json:"secrets_note"`
 }
 
 func (e *Engine) quickstart(_ context.Context) Result {
@@ -129,12 +129,12 @@ func (e *Engine) quickstart(_ context.Context) Result {
 }
 
 type schemaData struct {
-	Version    string         `json:"version"`
-	Envelope   map[string]any `json:"envelope"`
-	ExitCodes  map[string]int `json:"exit_codes"`
-	Commands   []string       `json:"commands"`
-	BodyFlag   string         `json:"body_flag"`
-	JSONFlag   string         `json:"json_flag"`
+	Version   string         `json:"version"`
+	Envelope  map[string]any `json:"envelope"`
+	ExitCodes map[string]int `json:"exit_codes"`
+	Commands  []string       `json:"commands"`
+	BodyFlag  string         `json:"body_flag"`
+	JSONFlag  string         `json:"json_flag"`
 }
 
 func (e *Engine) schema(_ context.Context) Result {
