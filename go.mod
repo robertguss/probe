@@ -12,9 +12,9 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/creack/pty v1.1.24
 	github.com/google/go-cmp v0.7.0
-	github.com/rogpeppe/go-internal v1.15.0
+	github.com/rogpeppe/go-internal v1.16.0
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.9
+	github.com/spf13/pflag v1.0.10
 	go.uber.org/goleak v1.3.0
 	golang.org/x/mod v0.38.0
 	golang.org/x/sys v0.47.0
