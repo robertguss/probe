@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -32,12 +33,14 @@ type Options struct {
 
 // Engine owns process-lifetime probe state and command dispatch.
 type Engine struct {
-	opts    Options
-	environ map[string]string
-	spike   SpikePaths
-	jsonOut bool
+	opts       Options
+	environ    map[string]string
+	spike      SpikePaths
+	jsonOut    bool
 	lastResult Result
 	helped     bool
+	hitMu      sync.Mutex
+	lastHitAt  time.Time
 }
 
 // New builds an Engine with defaults for missing writers.
@@ -150,9 +153,7 @@ func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
 	root.AddCommand(e.stubCmd("doctor", "check workspace and catalog health", `  probe doctor --json`))
 	root.AddCommand(e.initCmd(ctx))
 	root.AddCommand(e.authCmd(ctx))
-	root.AddCommand(e.stubCmd("hit", "send an HTTP request and record the exchange", `  fnox exec -- probe hit GET /api/v1/courses --auth canvas --base https://canvas.test --save courses --json
-  probe hit GET https://httpbin.org/get --dry-run --json
-  probe hit POST /items --body '{"a":1}' --auth api --json`))
+	root.AddCommand(e.hitCmd(ctx))
 	root.AddCommand(e.stubCmd("replay", "replay a saved request by id", `  probe replay 001-courses --json`))
 	root.AddCommand(e.lastCmd(ctx))
 	root.AddCommand(e.stubCmd("find", "search recorded exchanges", `  probe find courses --json`))
@@ -188,6 +189,49 @@ func (e *Engine) stubCmd(name, short, example string) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func (e *Engine) hitCmd(ctx context.Context) *cobra.Command {
+	in := HitInput{Follow: true, Retries: 2, Timeout: 30 * time.Second, MaxWait: 60 * time.Second, MaxBody: 1 << 20}
+	var noFollow bool
+	cmd := &cobra.Command{
+		Use:   "hit <METHOD> <URL|PATH>",
+		Short: "send an HTTP request and record the exchange",
+		Example: `  fnox exec -- probe hit GET /api/v1/courses --auth canvas --base https://canvas.test --save courses --json
+  probe hit GET https://httpbin.org/get --dry-run --json
+  probe hit POST /items --body '{"a":1}' --auth api --json`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(_ *cobra.Command, args []string) error {
+			in.Method = args[0]
+			in.URL = args[1]
+			if noFollow {
+				in.Follow = false
+			}
+			e.lastResult = e.hit(ctx, in)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&in.Base, "base", "", "base URL for relative paths")
+	cmd.Flags().StringVar(&in.Auth, "auth", "", "auth profile name")
+	cmd.Flags().StringArrayVar(&in.Headers, "header", nil, "request header Name:Value (repeatable)")
+	cmd.Flags().StringArrayVar(&in.Query, "query", nil, "query key=value (repeatable)")
+	cmd.Flags().StringVar(&in.Body, "body", "", "request body string")
+	cmd.Flags().StringVar(&in.BodyFile, "file", "", "request body from file, or - for stdin")
+	cmd.Flags().StringVar(&in.ContentType, "content-type", "", "Content-Type header")
+	cmd.Flags().DurationVar(&in.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
+	cmd.Flags().BoolVar(&in.Follow, "follow", true, "follow redirects")
+	cmd.Flags().BoolVar(&noFollow, "no-follow", false, "do not follow redirects")
+	cmd.Flags().StringVar(&in.Save, "save", "", "artifact name suffix (default request)")
+	cmd.Flags().BoolVar(&in.NoSave, "no-save", false, "do not persist exchange artifacts")
+	cmd.Flags().BoolVar(&in.DryRun, "dry-run", false, "print redacted plan only; no network")
+	cmd.Flags().StringVar(&in.Fields, "fields", "", "comma-separated response fields to include in data")
+	cmd.Flags().Int64Var(&in.MaxBody, "max-body", 1<<20, "max response body bytes to capture")
+	cmd.Flags().IntVar(&in.Retries, "retries", 2, "retries for HTTP 429/503")
+	cmd.Flags().DurationVar(&in.MaxWait, "max-wait", 60*time.Second, "max total retry wait")
+	cmd.Flags().BoolVar(&in.NoRetry, "no-retry", false, "disable retries")
+	cmd.Flags().Float64Var(&in.RPS, "rps", 0, "client-side requests-per-second cap")
+	cmd.Flags().StringVar(&in.API, "api", "", "optional catalog API name for defaults")
+	return cmd
 }
 
 func (e *Engine) initCmd(ctx context.Context) *cobra.Command {

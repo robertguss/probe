@@ -14,14 +14,14 @@ var redactHeaderNames = map[string]struct{}{
 }
 
 var redactQueryParams = map[string]struct{}{
-	"token":         {},
-	"access_token":  {},
-	"api_key":       {},
-	"apikey":        {},
-	"key":           {},
-	"secret":        {},
-	"password":      {},
-	"auth":          {},
+	"token":        {},
+	"access_token": {},
+	"api_key":      {},
+	"apikey":       {},
+	"key":          {},
+	"secret":       {},
+	"password":     {},
+	"auth":         {},
 }
 
 // RedactHeaders returns a copy with Authorization, Cookie, and Set-Cookie
