@@ -1,9 +1,0 @@
-# Expected error id: spec.duplicate_profile
-# Cause: same profile ID listed twice.
-schema = 1
-name = "dup-profile"
-module = "github.com/example/dup-profile"
-description = "Duplicate profile ID fixture"
-archetype = "cli"
-destination = "./dup-profile"
-profiles = ["distribution", "distribution"]

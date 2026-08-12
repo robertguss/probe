@@ -1,1 +1,0 @@
-catalog_digest_sha256=66478b609dc15339efe2e88c747342c61b0b7be28c074c81cbeea75b8ea10c1a

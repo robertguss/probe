@@ -1,6 +1,0 @@
-progress|report-plan-network||
-state||planned||bootstrap
-progress|acquire-parent|planned|
-state||parent-acquired||transition
-progress|create-stage|parent-acquired|
-terminal||parent-acquired|not-started|terminal

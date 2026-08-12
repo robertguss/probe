@@ -1,9 +1,0 @@
-# Expected error id: spec.unsupported_schema
-# Cause: schema not in supported set {1}.
-schema = 2
-name = "unsupported-schema"
-module = "github.com/example/unsupported-schema"
-description = "Unsupported schema version fixture"
-archetype = "cli"
-destination = "./unsupported-schema"
-profiles = []

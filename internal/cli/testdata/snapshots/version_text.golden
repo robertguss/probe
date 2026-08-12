@@ -1,7 +1,0 @@
-foundry 0.1.0-test
-commit: abc1234
-go: go1.26.5
-catalog_digest: e83d7f3f43fc95e14fb736c705baf3836ad8e527389badef220f990574312c72
-catalog_go_pin: go1.26.5
-FOUNDRY_GO_BIN: (unset)
-note: generate requires exact go1.26.5; run foundry doctor or set FOUNDRY_GO_BIN if PATH differs

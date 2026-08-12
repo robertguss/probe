@@ -1,6 +1,0 @@
-state||parent-acquired||transition
-progress|create-stage|parent-acquired|
-state||stage-created||transition
-progress|render|stage-created|
-state||failed-preserved||failure
-terminal||failed-preserved|failed-preserved|terminal|stage_path=.foundry-demo-deadbeef

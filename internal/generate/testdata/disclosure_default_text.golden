@@ -1,2 +1,0 @@
-network disclosure:
-  go-mod-tidy: module resolution during go mod tidy on cold caches

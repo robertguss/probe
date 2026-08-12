@@ -1,11 +1,35 @@
+# Binaries
+/probe
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
 
-# Beads / Dolt files (added by bd init)
-.dolt/
-*.db
-.beads-credential-key
-.beads/proxieddb/
+# Probe workspace
+.probe/
 
-# bv (beads viewer) local config and caches
-.bv/
-.codebase-memory/
-__pycache__/
+# Coverage / test
+coverage.out
+coverage.html
+*.coverprofile
+profile.cov
+
+# Go workspace
+vendor/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Env / secrets
+.env
+.env.*
+!.env.example

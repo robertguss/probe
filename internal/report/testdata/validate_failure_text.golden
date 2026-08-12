@@ -1,2 +1,0 @@
-foundry: spec.unknown_field: unknown field "offline" (at foundry.toml:4:1)
-  remediation: Remove the unknown field or table named in the error, or correct its spelling. Foundry uses strict TOML decoding — unknown keys are errors. See Section 14 of the specification.

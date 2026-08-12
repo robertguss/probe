@@ -1,1 +1,0 @@
-ok  	github.com/example/foundry-smoke-cli/internal/cli	0.031s
