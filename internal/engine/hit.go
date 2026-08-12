@@ -75,6 +75,17 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 	}
 
 	base := strings.TrimSpace(in.Base)
+	rps := in.RPS
+	if in.API != "" {
+		if catBase, catRPS, ok := e.loadCatalogDefaults(in.API); ok {
+			if base == "" {
+				base = catBase
+			}
+			if rps <= 0 && catRPS > 0 {
+				rps = catRPS
+			}
+		}
+	}
 	if base == "" && hasSpike {
 		if cfg, err := e.loadConfig(sp); err == nil {
 			base = cfg.Base
@@ -188,7 +199,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 
 	client := e.httpClient(timeout, in.Follow)
 	started := e.now()
-	out, err := e.doHTTP(ctx, client, req, retries, maxWait, in.NoRetry, in.RPS)
+	out, err := e.doHTTP(ctx, client, req, retries, maxWait, in.NoRetry, rps)
 	dur := e.now().Sub(started)
 	if err != nil {
 		return e.fail("hit", ExitTransport, "transport", err.Error(), "", nil)

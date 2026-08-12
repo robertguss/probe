@@ -159,9 +159,8 @@ func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
 	root.AddCommand(e.stubCmd("find", "search recorded exchanges", `  probe find courses --json`))
 	root.AddCommand(e.noteCmd(ctx))
 	root.AddCommand(e.summaryCmd(ctx))
-	root.AddCommand(e.stubCmd("promote", "promote a spike exchange into the catalog", `  probe promote canvas --endpoint get-courses --json
-  probe promote canvas --request 001-courses --dry-run --json`))
-	root.AddCommand(e.catalogCmd())
+	root.AddCommand(e.promoteCmd(ctx))
+	root.AddCommand(e.catalogCmd(ctx))
 	return root
 }
 
@@ -201,9 +200,12 @@ func (e *Engine) hitCmd(ctx context.Context) *cobra.Command {
   probe hit GET https://httpbin.org/get --dry-run --json
   probe hit POST /items --body '{"a":1}' --auth api --json`,
 		Args: cobra.ExactArgs(2),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			in.Method = args[0]
 			in.URL = args[1]
+			if !cmd.Flags().Changed("follow") && !noFollow {
+				in.Follow = strings.EqualFold(args[0], "GET")
+			}
 			if noFollow {
 				in.Follow = false
 			}
@@ -219,7 +221,7 @@ func (e *Engine) hitCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVar(&in.BodyFile, "file", "", "request body from file, or - for stdin")
 	cmd.Flags().StringVar(&in.ContentType, "content-type", "", "Content-Type header")
 	cmd.Flags().DurationVar(&in.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
-	cmd.Flags().BoolVar(&in.Follow, "follow", true, "follow redirects")
+	cmd.Flags().BoolVar(&in.Follow, "follow", true, "follow redirects (default on for GET)")
 	cmd.Flags().BoolVar(&noFollow, "no-follow", false, "do not follow redirects")
 	cmd.Flags().StringVar(&in.Save, "save", "", "artifact name suffix (default request)")
 	cmd.Flags().BoolVar(&in.NoSave, "no-save", false, "do not persist exchange artifacts")
@@ -366,7 +368,28 @@ func (e *Engine) authShowCmd(ctx context.Context) *cobra.Command {
 	}
 }
 
-func (e *Engine) catalogCmd() *cobra.Command {
+func (e *Engine) promoteCmd(ctx context.Context) *cobra.Command {
+	in := promoteInput{}
+	cmd := &cobra.Command{
+		Use:   "promote <api-name>",
+		Short: "promote a spike exchange into the catalog",
+		Example: `  probe promote canvas --endpoint get-courses --json
+  probe promote canvas --request 001-courses --dry-run --json`,
+		Args: cobra.ExactArgs(1),
+		Long: "Upserts an endpoint into $PROBE_CATALOG/<api>/api.yaml. Hard errors on base_conflict and fixture_exists (no overwrite in v1).",
+		RunE: func(_ *cobra.Command, args []string) error {
+			in.API = args[0]
+			e.lastResult = e.promote(ctx, in)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&in.Request, "request", "", "saved request id or name (default: last)")
+	cmd.Flags().StringVar(&in.Endpoint, "endpoint", "", "endpoint id (default: METHOD-path slug)")
+	cmd.Flags().BoolVar(&in.DryRun, "dry-run", false, "preview promote without writing")
+	return cmd
+}
+
+func (e *Engine) catalogCmd(ctx context.Context) *cobra.Command {
 	cat := &cobra.Command{
 		Use:   "catalog",
 		Short: "inspect the API catalog",
@@ -379,10 +402,40 @@ func (e *Engine) catalogCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cat.AddCommand(e.stubCmd("list", "list catalog APIs", `  probe catalog list --json`))
-	cat.AddCommand(e.stubCmd("show", "show one catalog API", `  probe catalog show canvas --json
-  probe catalog show canvas --endpoint get-courses --json`))
-	cat.AddCommand(e.stubCmd("path", "print on-disk path for an API", `  probe catalog path canvas --json`))
+	list := &cobra.Command{
+		Use:     "list",
+		Short:   "list catalog APIs",
+		Example: `  probe catalog list --json`,
+		Args:    cobra.NoArgs,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			e.lastResult = e.catalogList(ctx)
+			return nil
+		},
+	}
+	var endpoint string
+	show := &cobra.Command{
+		Use:   "show <api>",
+		Short: "show one catalog API",
+		Example: `  probe catalog show canvas --json
+  probe catalog show canvas --endpoint get-courses --json`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			e.lastResult = e.catalogShow(ctx, args[0], endpoint)
+			return nil
+		},
+	}
+	show.Flags().StringVar(&endpoint, "endpoint", "", "show a single endpoint id")
+	pathCmd := &cobra.Command{
+		Use:     "path <api>",
+		Short:   "print on-disk path for an API",
+		Example: `  probe catalog path canvas --json`,
+		Args:    cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			e.lastResult = e.catalogPath(ctx, args[0])
+			return nil
+		},
+	}
+	cat.AddCommand(list, show, pathCmd)
 	return cat
 }
 

@@ -86,7 +86,14 @@ func (e *Engine) resolveCatalog() (CatalogPaths, error) {
 	if v := e.environ["PROBE_CATALOG"]; v != "" {
 		return CatalogPaths{Root: v}, nil
 	}
-	return CatalogPaths{}, nil
+	if xdg := e.environ["XDG_DATA_HOME"]; xdg != "" {
+		return CatalogPaths{Root: filepath.Join(xdg, "probe", "catalog")}, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return CatalogPaths{}, err
+	}
+	return CatalogPaths{Root: filepath.Join(home, ".local", "share", "probe", "catalog")}, nil
 }
 
 func catalogAPI(cat CatalogPaths, api string) APIPaths {
