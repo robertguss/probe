@@ -107,39 +107,37 @@ type authListData struct {
 }
 
 func (e *Engine) authSet(_ context.Context, in AuthProfile) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("auth set")
 	if !ok {
-		res.Envelope.Command = "auth.set"
 		return res
 	}
 	in.Name = strings.TrimSpace(in.Name)
 	if in.Name == "" {
-		return e.usageError("auth.set", "missing profile name", "probe auth set canvas --type bearer --token-env CANVAS_TOKEN --json")
+		return e.usageError("auth set", "missing profile name", "probe auth set canvas --type bearer --token-env CANVAS_TOKEN --json")
 	}
 	in.Type = AuthType(strings.ToLower(string(in.Type)))
 	if err := validateAuthProfile(in); err != nil {
-		return e.usageError("auth.set", err.Error(), "probe auth set canvas --type bearer --token-env CANVAS_TOKEN --json")
+		return e.usageError("auth set", err.Error(), "probe auth set canvas --type bearer --token-env CANVAS_TOKEN --json")
 	}
 	cfg, err := e.loadConfig(sp)
 	if err != nil {
-		return e.fail("auth.set", ExitTransport, "transport", err.Error(), "", nil)
+		return e.fail("auth set", ExitTransport, "transport", err.Error(), "", nil)
 	}
 	cfg.Auth[in.Name] = in
 	if err := e.saveConfig(sp, cfg); err != nil {
-		return e.fail("auth.set", ExitTransport, "transport", err.Error(), "", nil)
+		return e.fail("auth set", ExitTransport, "transport", err.Error(), "", nil)
 	}
-	return e.ok("auth.set", authSetData{Name: in.Name, Type: string(in.Type)})
+	return e.ok("auth set", authSetData{Name: in.Name, Type: string(in.Type)})
 }
 
 func (e *Engine) authList(_ context.Context) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("auth list")
 	if !ok {
-		res.Envelope.Command = "auth.list"
 		return res
 	}
 	profiles, err := e.loadAuthProfiles(sp)
 	if err != nil {
-		return e.fail("auth.list", ExitTransport, "transport", err.Error(), "", nil)
+		return e.fail("auth list", ExitTransport, "transport", err.Error(), "", nil)
 	}
 	names := make([]string, 0, len(profiles))
 	for n := range profiles {
@@ -150,26 +148,25 @@ func (e *Engine) authList(_ context.Context) Result {
 	for _, n := range names {
 		out = append(out, profiles[n])
 	}
-	return e.ok("auth.list", authListData{Profiles: out})
+	return e.ok("auth list", authListData{Profiles: out})
 }
 
 func (e *Engine) authShow(_ context.Context, name string) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("auth show")
 	if !ok {
-		res.Envelope.Command = "auth.show"
 		return res
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return e.usageError("auth.show", "missing profile name", "probe auth show canvas --json")
+		return e.usageError("auth show", "missing profile name", "probe auth show canvas --json")
 	}
 	profiles, err := e.loadAuthProfiles(sp)
 	if err != nil {
-		return e.fail("auth.show", ExitTransport, "transport", err.Error(), "", nil)
+		return e.fail("auth show", ExitTransport, "transport", err.Error(), "", nil)
 	}
 	p, found := profiles[name]
 	if !found {
-		return e.fail("auth.show", ExitUsage, "not_found", fmt.Sprintf("auth profile %q not found", name), "probe auth list --json", []string{"probe auth list --json"})
+		return e.fail("auth show", ExitUsage, "not_found", fmt.Sprintf("auth profile %q not found", name), "probe auth list --json", []string{"probe auth list --json"})
 	}
-	return e.ok("auth.show", p)
+	return e.ok("auth show", p)
 }

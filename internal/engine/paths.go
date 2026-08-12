@@ -48,11 +48,11 @@ func (e *Engine) cwd() (string, error) {
 	return os.Getwd()
 }
 
-func (e *Engine) resolveSpike(cwd string) (SpikePaths, error) {
+func (e *Engine) resolveSpike(cwd string) SpikePaths {
 	if e.opts.SpikeDir != "" {
-		return spikePathsFor(e.opts.SpikeDir), nil
+		return spikePathsFor(e.opts.SpikeDir)
 	}
-	return spikePathsFor(filepath.Join(cwd, ".probe")), nil
+	return spikePathsFor(filepath.Join(cwd, ".probe"))
 }
 
 func (e *Engine) openSpike() (SpikePaths, error) {
@@ -60,21 +60,16 @@ func (e *Engine) openSpike() (SpikePaths, error) {
 	if err != nil {
 		return SpikePaths{}, err
 	}
-	sp, err := e.resolveSpike(cwd)
-	if err != nil {
-		return SpikePaths{}, err
-	}
-	e.spike = sp
-	return sp, nil
+	return e.resolveSpike(cwd), nil
 }
 
-func (e *Engine) requireSpike() (SpikePaths, Result, bool) {
+func (e *Engine) requireSpike(command string) (SpikePaths, Result, bool) {
 	sp, err := e.openSpike()
 	if err != nil {
-		return SpikePaths{}, e.fail("probe", ExitTransport, "transport", err.Error(), "", nil), false
+		return SpikePaths{}, e.fail(command, ExitTransport, "transport", err.Error(), "", nil), false
 	}
 	if _, err := os.Stat(sp.Root); err != nil {
-		return SpikePaths{}, e.usageError("probe", "not a probe workspace (no .probe/); run init first", "probe init --json"), false
+		return SpikePaths{}, e.usageError(command, "not a probe workspace (no .probe/); run init first", "probe init --json"), false
 	}
 	return sp, Result{}, true
 }

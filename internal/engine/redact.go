@@ -24,15 +24,35 @@ var redactQueryParams = map[string]struct{}{
 	"auth":         {},
 }
 
-// RedactHeaders returns a copy with Authorization, Cookie, and Set-Cookie
-// values replaced by [REDACTED]. Matching is case-insensitive on names.
-func RedactHeaders(h map[string]string) map[string]string {
+func shouldRedactHeader(name string, extra []string) bool {
+	lower := strings.ToLower(name)
+	if _, ok := redactHeaderNames[lower]; ok {
+		return true
+	}
+	for _, x := range extra {
+		if strings.EqualFold(name, x) {
+			return true
+		}
+	}
+	return false
+}
+
+func secretHeaderName(name, value string) bool {
+	if shouldRedactHeader(name, nil) {
+		return true
+	}
+	return value == redacted
+}
+
+// RedactHeaders returns a copy with Authorization, Cookie, Set-Cookie, and
+// any extra names replaced by [REDACTED]. Matching is case-insensitive.
+func RedactHeaders(h map[string]string, extra ...string) map[string]string {
 	if h == nil {
 		return nil
 	}
 	out := make(map[string]string, len(h))
 	for k, v := range h {
-		if _, ok := redactHeaderNames[strings.ToLower(k)]; ok {
+		if shouldRedactHeader(k, extra) {
 			out[k] = redacted
 			continue
 		}

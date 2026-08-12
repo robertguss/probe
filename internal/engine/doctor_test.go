@@ -1,8 +1,11 @@
 package engine
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -30,6 +33,40 @@ func TestDoctorNoSecrets(t *testing.T) {
 	raw, _ := json.Marshal(res.Envelope.Data)
 	if !strings.Contains(string(raw), `"canvas.CANVAS_TOKEN":true`) {
 		t.Fatalf("expected auth env presence bool: %s", raw)
+	}
+}
+
+func TestDoctorDoesNotCreateCatalog(t *testing.T) {
+	spike := t.TempDir()
+	missing := filepath.Join(t.TempDir(), "does-not-exist", "catalog")
+	e := New(Options{
+		SpikeDir:    spike,
+		CatalogDir:  missing,
+		JSONDefault: true,
+	})
+	res := e.Run(context.Background(), []string{"doctor", "--json"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("doctor: %+v", res.Envelope)
+	}
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatalf("doctor created catalog root %s: %v", missing, err)
+	}
+	parent := filepath.Dir(missing)
+	if _, err := os.Stat(parent); !os.IsNotExist(err) {
+		t.Fatalf("doctor created catalog parent %s: %v", parent, err)
+	}
+}
+
+func TestNonTTYForcesJSONEnvelope(t *testing.T) {
+	var out bytes.Buffer
+	e := New(Options{Stdout: &out, JSONDefault: false})
+	res := e.Run(context.Background(), []string{"version"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("exit=%d", res.ExitCode)
+	}
+	raw := out.String()
+	if !strings.Contains(raw, `"ok":true`) || !strings.Contains(raw, `"command":"probe version"`) {
+		t.Fatalf("non-TTY should emit JSON envelope, got %s", raw)
 	}
 }
 

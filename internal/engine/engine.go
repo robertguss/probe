@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -33,14 +32,17 @@ type Options struct {
 
 // Engine owns process-lifetime probe state and command dispatch.
 type Engine struct {
-	opts       Options
-	environ    map[string]string
-	spike      SpikePaths
-	jsonOut    bool
-	lastResult Result
-	helped     bool
-	hitMu      sync.Mutex
-	lastHitAt  time.Time
+	opts      Options
+	environ   map[string]string
+	lastHitAt time.Time
+	run       *invocation
+}
+
+// invocation is per-Run command state. It must not outlive Engine.Run.
+type invocation struct {
+	jsonOut bool
+	helped  bool
+	last    Result
 }
 
 // New builds an Engine with defaults for missing writers.
@@ -63,24 +65,35 @@ func New(opts Options) *Engine {
 	return &Engine{
 		opts:    opts,
 		environ: environ,
-		jsonOut: opts.JSONDefault,
 	}
+}
+
+func isTTY(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeCharDevice != 0
 }
 
 // Run parses args, dispatches a command, writes output, and returns Result.
 // Never calls os.Exit.
 func (e *Engine) Run(ctx context.Context, args []string) Result {
-	e.lastResult = Result{}
-	e.helped = false
-	e.jsonOut = e.opts.JSONDefault
+	inv := &invocation{}
+	e.run = inv
+	defer func() { e.run = nil }()
 
-	root := e.rootCmd(ctx)
+	root := e.rootCmd()
 	root.SetArgs(args)
 	root.SetOut(e.opts.Stdout)
 	root.SetErr(e.opts.Stderr)
 
 	err := root.ExecuteContext(ctx)
-	if e.helped {
+	if inv.helped {
 		return e.ok("help", nil)
 	}
 	if err != nil {
@@ -89,14 +102,31 @@ func (e *Engine) Run(ctx context.Context, args []string) Result {
 		e.writeOutput(res)
 		return res
 	}
-	if e.lastResult.Envelope.Command == "" {
+	if inv.last.Envelope.Command == "" {
 		return e.ok("help", nil)
 	}
-	e.writeOutput(e.lastResult)
-	return e.lastResult
+	e.writeOutput(inv.last)
+	return inv.last
 }
 
-func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
+func (e *Engine) finish(res Result) error {
+	e.run.last = res
+	return nil
+}
+
+func (e *Engine) leaf(use, short, example string, args cobra.PositionalArgs, run func(ctx context.Context, args []string) Result) *cobra.Command {
+	return &cobra.Command{
+		Use:     use,
+		Short:   short,
+		Example: example,
+		Args:    args,
+		RunE: func(cmd *cobra.Command, a []string) error {
+			return e.finish(run(cmd.Context(), a))
+		},
+	}
+}
+
+func (e *Engine) rootCmd() *cobra.Command {
 	var jsonFlag bool
 	root := &cobra.Command{
 		Use:   "probe",
@@ -108,18 +138,18 @@ func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		PersistentPreRun: func(_ *cobra.Command, _ []string) {
-			e.jsonOut = e.opts.JSONDefault || jsonFlag
+			e.run.jsonOut = e.opts.JSONDefault || jsonFlag || !isTTY(e.opts.Stdout)
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			e.helped = true
+			e.run.helped = true
 			return nil
 		},
 	}
 	root.PersistentFlags().BoolVar(&jsonFlag, "json", false, "emit JSON envelope on stdout")
 	root.CompletionOptions.DisableDefaultCmd = true
 	root.SetHelpFunc(func(cmd *cobra.Command, _ []string) {
-		e.helped = true
+		e.run.helped = true
 		out := cmd.OutOrStdout()
 		if cmd.Long != "" {
 			fmt.Fprintln(out, cmd.Long)
@@ -147,116 +177,61 @@ func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
 		}
 	})
 
-	root.AddCommand(e.versionCmd(ctx))
-	root.AddCommand(e.quickstartCmd(ctx))
-	root.AddCommand(e.schemaCmd(ctx))
-	root.AddCommand(e.doctorCmd(ctx))
-	root.AddCommand(e.initCmd(ctx))
-	root.AddCommand(e.authCmd(ctx))
-	root.AddCommand(e.hitCmd(ctx))
-	root.AddCommand(e.replayCmd(ctx))
-	root.AddCommand(e.lastCmd(ctx))
-	root.AddCommand(e.findCmd(ctx))
-	root.AddCommand(e.noteCmd(ctx))
-	root.AddCommand(e.summaryCmd(ctx))
-	root.AddCommand(e.promoteCmd(ctx))
-	root.AddCommand(e.catalogCmd(ctx))
+	root.AddCommand(e.versionCmd())
+	root.AddCommand(e.quickstartCmd())
+	root.AddCommand(e.schemaCmd())
+	root.AddCommand(e.doctorCmd())
+	root.AddCommand(e.initCmd())
+	root.AddCommand(e.authCmd())
+	root.AddCommand(e.hitCmd())
+	root.AddCommand(e.replayCmd())
+	root.AddCommand(e.lastCmd())
+	root.AddCommand(e.findCmd())
+	root.AddCommand(e.noteCmd())
+	root.AddCommand(e.summaryCmd())
+	root.AddCommand(e.promoteCmd())
+	root.AddCommand(e.catalogCmd())
 	return root
 }
 
-func (e *Engine) versionCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:   "version",
-		Short: "print probe version",
-		Example: `  probe version
-  probe version --json`,
-		Args: cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.version(ctx)
-			return nil
-		},
-	}
+func (e *Engine) versionCmd() *cobra.Command {
+	return e.leaf("version", "print probe version", "  probe version\n  probe version --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.version(ctx)
+	})
 }
 
-func (e *Engine) quickstartCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "quickstart",
-		Short:   "print agent quickstart",
-		Example: `  probe quickstart --json`,
-		Args:    cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.quickstart(ctx)
-			return nil
-		},
-	}
+func (e *Engine) quickstartCmd() *cobra.Command {
+	return e.leaf("quickstart", "print agent quickstart", "  probe quickstart --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.quickstart(ctx)
+	})
 }
 
-func (e *Engine) schemaCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "schema",
-		Short:   "describe command tree and JSON envelope",
-		Example: `  probe schema --json`,
-		Args:    cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.schema(ctx)
-			return nil
-		},
-	}
+func (e *Engine) schemaCmd() *cobra.Command {
+	return e.leaf("schema", "describe command tree and JSON envelope", "  probe schema --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.schema(ctx)
+	})
 }
 
-func (e *Engine) doctorCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "doctor",
-		Short:   "check workspace and catalog readiness (booleans only)",
-		Example: `  probe doctor --json`,
-		Args:    cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.doctor(ctx)
-			return nil
-		},
-	}
+func (e *Engine) doctorCmd() *cobra.Command {
+	return e.leaf("doctor", "check workspace and catalog readiness (booleans only)", "  probe doctor --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.doctor(ctx)
+	})
 }
 
-func (e *Engine) replayCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "replay <NAME|ID>",
-		Short:   "replay a saved request by id",
-		Example: `  probe replay 001-courses --json`,
-		Args:    cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			e.lastResult = e.replay(ctx, args[0])
-			return nil
-		},
-	}
+func (e *Engine) replayCmd() *cobra.Command {
+	return e.leaf("replay <NAME|ID>", "replay a saved request by id", "  probe replay 001-courses --json", cobra.ExactArgs(1), func(ctx context.Context, args []string) Result {
+		return e.replay(ctx, args[0])
+	})
 }
 
-func (e *Engine) findCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "find <path.hints>",
-		Short:   "search recorded exchanges by id/path hint",
-		Example: `  probe find courses --json`,
-		Args:    cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			e.lastResult = e.find(ctx, args[0])
-			return nil
-		},
-	}
+func (e *Engine) findCmd() *cobra.Command {
+	return e.leaf("find <path.hints>", "search recorded exchanges by id/path hint", "  probe find courses --json", cobra.ExactArgs(1), func(ctx context.Context, args []string) Result {
+		return e.find(ctx, args[0])
+	})
 }
 
-func (e *Engine) stubCmd(name, short, example string) *cobra.Command {
-	return &cobra.Command{
-		Use:     name,
-		Short:   short,
-		Example: example,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.usageError(name, name+" not implemented", firstExampleLine(example))
-			return nil
-		},
-	}
-}
-
-func (e *Engine) hitCmd(ctx context.Context) *cobra.Command {
-	in := HitInput{Follow: true, Retries: 2, Timeout: 30 * time.Second, MaxWait: 60 * time.Second, MaxBody: 1 << 20}
+func (e *Engine) hitCmd() *cobra.Command {
+	in := HitInput{Follow: true, Retries: defaultRetries, Timeout: defaultTimeout, MaxWait: defaultMaxWait, MaxBody: defaultMaxBody}
 	var noFollow bool
 	cmd := &cobra.Command{
 		Use:   "hit <METHOD> <URL|PATH>",
@@ -274,8 +249,7 @@ func (e *Engine) hitCmd(ctx context.Context) *cobra.Command {
 			if noFollow {
 				in.Follow = false
 			}
-			e.lastResult = e.hit(ctx, in)
-			return nil
+			return e.finish(e.hit(cmd.Context(), in))
 		},
 	}
 	cmd.Flags().StringVar(&in.Base, "base", "", "base URL for relative paths")
@@ -285,23 +259,23 @@ func (e *Engine) hitCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVar(&in.Body, "body", "", "request body string")
 	cmd.Flags().StringVar(&in.BodyFile, "file", "", "request body from file, or - for stdin")
 	cmd.Flags().StringVar(&in.ContentType, "content-type", "", "Content-Type header")
-	cmd.Flags().DurationVar(&in.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
+	cmd.Flags().DurationVar(&in.Timeout, "timeout", defaultTimeout, "HTTP client timeout")
 	cmd.Flags().BoolVar(&in.Follow, "follow", true, "follow redirects (default on for GET)")
 	cmd.Flags().BoolVar(&noFollow, "no-follow", false, "do not follow redirects")
 	cmd.Flags().StringVar(&in.Save, "save", "", "artifact name suffix (default request)")
 	cmd.Flags().BoolVar(&in.NoSave, "no-save", false, "do not persist exchange artifacts")
 	cmd.Flags().BoolVar(&in.DryRun, "dry-run", false, "print redacted plan only; no network")
 	cmd.Flags().StringVar(&in.Fields, "fields", "", "comma-separated response fields to include in data")
-	cmd.Flags().Int64Var(&in.MaxBody, "max-body", 1<<20, "max response body bytes to capture")
-	cmd.Flags().IntVar(&in.Retries, "retries", 2, "retries for HTTP 429/503")
-	cmd.Flags().DurationVar(&in.MaxWait, "max-wait", 60*time.Second, "max total retry wait")
+	cmd.Flags().Int64Var(&in.MaxBody, "max-body", defaultMaxBody, "max response body bytes to capture")
+	cmd.Flags().IntVar(&in.Retries, "retries", defaultRetries, "retries for HTTP 429/503")
+	cmd.Flags().DurationVar(&in.MaxWait, "max-wait", defaultMaxWait, "max total retry wait")
 	cmd.Flags().BoolVar(&in.NoRetry, "no-retry", false, "disable retries")
 	cmd.Flags().Float64Var(&in.RPS, "rps", 0, "client-side requests-per-second cap")
 	cmd.Flags().StringVar(&in.API, "api", "", "optional catalog API name for defaults")
 	return cmd
 }
 
-func (e *Engine) initCmd(ctx context.Context) *cobra.Command {
+func (e *Engine) initCmd() *cobra.Command {
 	var dir string
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -309,55 +283,33 @@ func (e *Engine) initCmd(ctx context.Context) *cobra.Command {
 		Example: `  probe init
   probe init --dir /tmp/spike --json`,
 		Args: cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.initSpike(ctx, dir)
-			return nil
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return e.finish(e.initSpike(cmd.Context(), dir))
 		},
 	}
 	cmd.Flags().StringVar(&dir, "dir", "", "directory for .probe workspace (default: ./.probe)")
 	return cmd
 }
 
-func (e *Engine) lastCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "last",
-		Short:   "show the last recorded exchange",
-		Example: `  probe last --json`,
-		Args:    cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.lastExchange(ctx)
-			return nil
-		},
-	}
+func (e *Engine) lastCmd() *cobra.Command {
+	return e.leaf("last", "show the last recorded exchange", "  probe last --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.lastExchange(ctx)
+	})
 }
 
-func (e *Engine) noteCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "note",
-		Short:   "append a note to .probe/notes.md",
-		Example: `  probe note "auth works with staging token" --json`,
-		Args:    cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			e.lastResult = e.note(ctx, args[0])
-			return nil
-		},
-	}
+func (e *Engine) noteCmd() *cobra.Command {
+	return e.leaf("note", "append a note to .probe/notes.md", "  probe note \"auth works with staging token\" --json", cobra.ExactArgs(1), func(ctx context.Context, args []string) Result {
+		return e.note(ctx, args[0])
+	})
 }
 
-func (e *Engine) summaryCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "summary",
-		Short:   "summarize the spike session",
-		Example: `  probe summary --json`,
-		Args:    cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.summary(ctx)
-			return nil
-		},
-	}
+func (e *Engine) summaryCmd() *cobra.Command {
+	return e.leaf("summary", "summarize the spike session", "  probe summary --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.summary(ctx)
+	})
 }
 
-func (e *Engine) authCmd(ctx context.Context) *cobra.Command {
+func (e *Engine) authCmd() *cobra.Command {
 	auth := &cobra.Command{
 		Use:   "auth",
 		Short: "manage auth profiles (env-name refs only)",
@@ -366,17 +318,21 @@ func (e *Engine) authCmd(ctx context.Context) *cobra.Command {
   probe auth set canvas --type bearer --token-env CANVAS_TOKEN --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			e.helped = true
+			e.run.helped = true
 			return nil
 		},
 	}
-	auth.AddCommand(e.authSetCmd(ctx))
-	auth.AddCommand(e.authListCmd(ctx))
-	auth.AddCommand(e.authShowCmd(ctx))
+	auth.AddCommand(e.authSetCmd())
+	auth.AddCommand(e.leaf("list", "list auth profiles", "  probe auth list --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.authList(ctx)
+	}))
+	auth.AddCommand(e.leaf("show [name]", "show one auth profile (env names only)", "  probe auth show canvas --json", cobra.ExactArgs(1), func(ctx context.Context, args []string) Result {
+		return e.authShow(ctx, args[0])
+	}))
 	return auth
 }
 
-func (e *Engine) authSetCmd(ctx context.Context) *cobra.Command {
+func (e *Engine) authSetCmd() *cobra.Command {
 	var typ, tokenEnv, userEnv, passEnv, headerName, valueEnv string
 	cmd := &cobra.Command{
 		Use:   "set [name]",
@@ -385,8 +341,8 @@ func (e *Engine) authSetCmd(ctx context.Context) *cobra.Command {
   probe auth set basic --type basic --user-env API_USER --pass-env API_PASS --json
   probe auth set custom --type header --name X-API-Key --value-env API_KEY --json`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			e.lastResult = e.authSet(ctx, AuthProfile{
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return e.finish(e.authSet(cmd.Context(), AuthProfile{
 				Name:     args[0],
 				Type:     AuthType(typ),
 				TokenEnv: tokenEnv,
@@ -394,8 +350,7 @@ func (e *Engine) authSetCmd(ctx context.Context) *cobra.Command {
 				PassEnv:  passEnv,
 				Header:   headerName,
 				ValueEnv: valueEnv,
-			})
-			return nil
+			}))
 		},
 	}
 	cmd.Flags().StringVar(&typ, "type", "", "auth type: bearer|basic|header")
@@ -407,33 +362,7 @@ func (e *Engine) authSetCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func (e *Engine) authListCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "list",
-		Short:   "list auth profiles",
-		Example: `  probe auth list --json`,
-		Args:    cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.authList(ctx)
-			return nil
-		},
-	}
-}
-
-func (e *Engine) authShowCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:     "show [name]",
-		Short:   "show one auth profile (env names only)",
-		Example: `  probe auth show canvas --json`,
-		Args:    cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			e.lastResult = e.authShow(ctx, args[0])
-			return nil
-		},
-	}
-}
-
-func (e *Engine) promoteCmd(ctx context.Context) *cobra.Command {
+func (e *Engine) promoteCmd() *cobra.Command {
 	in := promoteInput{}
 	cmd := &cobra.Command{
 		Use:   "promote <api-name>",
@@ -442,10 +371,9 @@ func (e *Engine) promoteCmd(ctx context.Context) *cobra.Command {
   probe promote canvas --request 001-courses --dry-run --json`,
 		Args: cobra.ExactArgs(1),
 		Long: "Upserts an endpoint into $PROBE_CATALOG/<api>/api.yaml. Hard errors on base_conflict and fixture_exists (no overwrite in v1).",
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			in.API = args[0]
-			e.lastResult = e.promote(ctx, in)
-			return nil
+			return e.finish(e.promote(cmd.Context(), in))
 		},
 	}
 	cmd.Flags().StringVar(&in.Request, "request", "", "saved request id or name (default: last)")
@@ -454,7 +382,7 @@ func (e *Engine) promoteCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func (e *Engine) catalogCmd(ctx context.Context) *cobra.Command {
+func (e *Engine) catalogCmd() *cobra.Command {
 	cat := &cobra.Command{
 		Use:   "catalog",
 		Short: "inspect the API catalog",
@@ -463,20 +391,13 @@ func (e *Engine) catalogCmd(ctx context.Context) *cobra.Command {
   probe catalog show canvas --endpoint get-courses --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			e.helped = true
+			e.run.helped = true
 			return nil
 		},
 	}
-	list := &cobra.Command{
-		Use:     "list",
-		Short:   "list catalog APIs",
-		Example: `  probe catalog list --json`,
-		Args:    cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			e.lastResult = e.catalogList(ctx)
-			return nil
-		},
-	}
+	cat.AddCommand(e.leaf("list", "list catalog APIs", "  probe catalog list --json", cobra.NoArgs, func(ctx context.Context, _ []string) Result {
+		return e.catalogList(ctx)
+	}))
 	var endpoint string
 	show := &cobra.Command{
 		Use:   "show <api>",
@@ -484,38 +405,20 @@ func (e *Engine) catalogCmd(ctx context.Context) *cobra.Command {
 		Example: `  probe catalog show canvas --json
   probe catalog show canvas --endpoint get-courses --json`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			e.lastResult = e.catalogShow(ctx, args[0], endpoint)
-			return nil
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return e.finish(e.catalogShow(cmd.Context(), args[0], endpoint))
 		},
 	}
 	show.Flags().StringVar(&endpoint, "endpoint", "", "show a single endpoint id")
-	pathCmd := &cobra.Command{
-		Use:     "path <api>",
-		Short:   "print on-disk path for an API",
-		Example: `  probe catalog path canvas --json`,
-		Args:    cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			e.lastResult = e.catalogPath(ctx, args[0])
-			return nil
-		},
-	}
-	cat.AddCommand(list, show, pathCmd)
+	cat.AddCommand(show)
+	cat.AddCommand(e.leaf("path <api>", "print on-disk path for an API", "  probe catalog path canvas --json", cobra.ExactArgs(1), func(ctx context.Context, args []string) Result {
+		return e.catalogPath(ctx, args[0])
+	}))
 	return cat
 }
 
-func firstExampleLine(example string) string {
-	for _, line := range strings.Split(example, "\n") {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			return line
-		}
-	}
-	return "probe --help"
-}
-
 func (e *Engine) writeOutput(res Result) {
-	if e.jsonOut {
+	if e.run != nil && e.run.jsonOut {
 		enc := json.NewEncoder(e.opts.Stdout)
 		enc.SetEscapeHTML(false)
 		_ = enc.Encode(res.Envelope)
@@ -523,9 +426,9 @@ func (e *Engine) writeOutput(res Result) {
 	}
 	if res.Envelope.OK {
 		switch res.Envelope.Command {
-		case "version":
+		case "probe version":
 			fmt.Fprintln(e.opts.Stdout, Version)
-		case "help":
+		case "probe help", "help":
 		default:
 			if res.Envelope.Data != nil {
 				var buf bytes.Buffer

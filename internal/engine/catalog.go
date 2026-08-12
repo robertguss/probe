@@ -49,13 +49,13 @@ type promoteInput struct {
 
 var apiNameRe = regexp.MustCompile(`^[a-z][a-z0-9-]{0,63}$`)
 
-func (e *Engine) requireCatalogRoot() (CatalogPaths, Result, bool) {
+func (e *Engine) requireCatalogRoot(command string) (CatalogPaths, Result, bool) {
 	cat, err := e.resolveCatalog()
 	if err != nil {
-		return CatalogPaths{}, e.fail("catalog", ExitTransport, "transport", err.Error(), "", nil), false
+		return CatalogPaths{}, e.fail(command, ExitTransport, "transport", err.Error(), "", nil), false
 	}
 	if cat.Root == "" {
-		return CatalogPaths{}, e.usageError("catalog", "catalog root not set", "PROBE_CATALOG=/path/to/catalog probe catalog list --json"), false
+		return CatalogPaths{}, e.usageError(command, "catalog root not set", "PROBE_CATALOG=/path/to/catalog probe catalog list --json"), false
 	}
 	return cat, Result{}, true
 }
@@ -83,16 +83,45 @@ func (e *Engine) saveCatalogAPI(paths APIPaths, api CatalogAPI) error {
 	return writeFileAtomic(paths.APIYAML, b, 0o644)
 }
 
+type catalogListData struct {
+	APIs []string `json:"apis"`
+	Root string   `json:"root"`
+}
+
+type catalogShowEndpointData struct {
+	API       string          `json:"api"`
+	Endpoint  CatalogEndpoint `json:"endpoint"`
+	Base      string          `json:"base"`
+	RateLimit *RateLimit      `json:"rate_limit,omitempty"`
+}
+
+type catalogPathData struct {
+	API  string `json:"api"`
+	Path string `json:"path"`
+}
+
+type promoteData struct {
+	API      string          `json:"api"`
+	Endpoint CatalogEndpoint `json:"endpoint"`
+	Request  string          `json:"request"`
+	DryRun   bool            `json:"dry_run"`
+	Path     string          `json:"path"`
+}
+
+type catalogFixture struct {
+	Request  savedRequestFile  `json:"request"`
+	Response savedResponseFile `json:"response"`
+}
+
 func (e *Engine) catalogList(_ context.Context) Result {
-	cat, res, ok := e.requireCatalogRoot()
+	cat, res, ok := e.requireCatalogRoot("catalog list")
 	if !ok {
-		res.Envelope.Command = "catalog list"
 		return res
 	}
 	entries, err := os.ReadDir(cat.Root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return e.ok("catalog list", map[string]any{"apis": []string{}, "root": cat.Root})
+			return e.ok("catalog list", catalogListData{APIs: []string{}, Root: cat.Root})
 		}
 		return e.fail("catalog list", ExitTransport, "transport", err.Error(), "", nil)
 	}
@@ -106,7 +135,7 @@ func (e *Engine) catalogList(_ context.Context) Result {
 			apis = append(apis, ent.Name())
 		}
 	}
-	return e.ok("catalog list", map[string]any{"apis": apis, "root": cat.Root})
+	return e.ok("catalog list", catalogListData{APIs: apis, Root: cat.Root})
 }
 
 func (e *Engine) catalogShow(_ context.Context, name, endpoint string) Result {
@@ -115,9 +144,8 @@ func (e *Engine) catalogShow(_ context.Context, name, endpoint string) Result {
 	if name == "" {
 		return e.usageError("catalog show", "missing api name", example)
 	}
-	cat, res, ok := e.requireCatalogRoot()
+	cat, res, ok := e.requireCatalogRoot("catalog show")
 	if !ok {
-		res.Envelope.Command = "catalog show"
 		return res
 	}
 	paths := catalogAPI(cat, name)
@@ -131,7 +159,7 @@ func (e *Engine) catalogShow(_ context.Context, name, endpoint string) Result {
 	if endpoint != "" {
 		for _, ep := range api.Endpoints {
 			if ep.ID == endpoint {
-				return e.ok("catalog show", map[string]any{"api": api.Name, "endpoint": ep, "base": api.Base, "rate_limit": api.RateLimit})
+				return e.ok("catalog show", catalogShowEndpointData{API: api.Name, Endpoint: ep, Base: api.Base, RateLimit: api.RateLimit})
 			}
 		}
 		return e.fail("catalog show", ExitUsage, "not_found", fmt.Sprintf("endpoint %q not found", endpoint), "probe catalog show "+name+" --json", nil)
@@ -145,13 +173,12 @@ func (e *Engine) catalogPath(_ context.Context, name string) Result {
 	if name == "" {
 		return e.usageError("catalog path", "missing api name", example)
 	}
-	cat, res, ok := e.requireCatalogRoot()
+	cat, res, ok := e.requireCatalogRoot("catalog path")
 	if !ok {
-		res.Envelope.Command = "catalog path"
 		return res
 	}
 	paths := catalogAPI(cat, name)
-	return e.ok("catalog path", map[string]string{"api": name, "path": paths.Root})
+	return e.ok("catalog path", catalogPathData{API: name, Path: paths.Root})
 }
 
 func (e *Engine) promote(_ context.Context, in promoteInput) Result {
@@ -164,14 +191,12 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		return e.usageError("promote", "api name must be a slug like canvas or stripe", example)
 	}
 
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("promote")
 	if !ok {
-		res.Envelope.Command = "promote"
 		return res
 	}
-	cat, res, ok := e.requireCatalogRoot()
+	cat, res, ok := e.requireCatalogRoot("promote")
 	if !ok {
-		res.Envelope.Command = "promote"
 		return res
 	}
 
@@ -187,20 +212,11 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		return e.usageError("promote", "no saved request to promote", "probe hit GET https://example.com --save demo --json")
 	}
 
-	rb, err := os.ReadFile(filepath.Join(sp.Requests, reqID+".json"))
+	req, resp, err := e.loadExchange(sp, reqID)
 	if err != nil {
-		return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("request %q not found", reqID), "probe last --json", nil)
-	}
-	sb, err := os.ReadFile(filepath.Join(sp.Responses, reqID+".json"))
-	if err != nil {
-		return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("response %q not found", reqID), "probe last --json", nil)
-	}
-	var req savedRequestFile
-	var resp savedResponseFile
-	if err := json.Unmarshal(rb, &req); err != nil {
-		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
-	}
-	if err := json.Unmarshal(sb, &resp); err != nil {
+		if os.IsNotExist(err) {
+			return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("request %q not found", reqID), "probe last --json", nil)
+		}
 		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 	}
 
@@ -264,12 +280,12 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		PromotedAt: e.now().UTC().Format(time.RFC3339),
 	}
 
-	data := map[string]any{
-		"api":      apiName,
-		"endpoint": ep,
-		"request":  reqID,
-		"dry_run":  in.DryRun,
-		"path":     paths.Root,
+	data := promoteData{
+		API:      apiName,
+		Endpoint: ep,
+		Request:  reqID,
+		DryRun:   in.DryRun,
+		Path:     paths.Root,
 	}
 	if in.DryRun {
 		return e.ok("promote", data)
@@ -278,21 +294,20 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 	if err := os.MkdirAll(paths.Fixtures, 0o755); err != nil {
 		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 	}
-	fixture := map[string]any{
-		"request":  req,
-		"response": resp,
-	}
+	fixture := catalogFixture{Request: req, Response: resp}
 	fb, err := json.MarshalIndent(fixture, "", "  ")
 	if err != nil {
 		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 	}
 	fb = append(fb, '\n')
-	if err := writeFileAtomic(filepath.Join(paths.Fixtures, fixtureName), fb, 0o644); err != nil {
+	fixturePath := filepath.Join(paths.Fixtures, fixtureName)
+	if err := writeFileAtomic(fixturePath, fb, 0o644); err != nil {
 		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 	}
 
 	api.Endpoints = append(api.Endpoints, ep)
 	if err := e.saveCatalogAPI(paths, api); err != nil {
+		_ = os.Remove(fixturePath)
 		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 	}
 
@@ -343,21 +358,21 @@ func endpointSlug(method, path string) string {
 	return method + "-" + strings.ToLower(slug)
 }
 
-func (e *Engine) loadCatalogDefaults(apiName string) (base string, rps float64, ok bool) {
+func (e *Engine) loadCatalogDefaults(apiName string) (base string, rps float64) {
 	apiName = strings.TrimSpace(apiName)
 	if apiName == "" {
-		return "", 0, false
+		return "", 0
 	}
 	cat, err := e.resolveCatalog()
 	if err != nil || cat.Root == "" {
-		return "", 0, false
+		return "", 0
 	}
 	api, err := e.loadCatalogAPI(catalogAPI(cat, apiName))
 	if err != nil {
-		return "", 0, false
+		return "", 0
 	}
 	if api.RateLimit != nil {
 		rps = api.RateLimit.RPS
 	}
-	return api.Base, rps, true
+	return api.Base, rps
 }

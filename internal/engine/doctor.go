@@ -79,10 +79,38 @@ func (e *Engine) envPresent(name string) bool {
 }
 
 func catalogWritable(root string) bool {
-	if err := os.MkdirAll(root, 0o755); err != nil {
+	if root == "" {
 		return false
 	}
-	f, err := os.CreateTemp(root, ".probe-write-*")
+	root = filepath.Clean(root)
+	if st, err := os.Stat(root); err == nil {
+		if !st.IsDir() {
+			return false
+		}
+		return dirWritable(root)
+	} else if !os.IsNotExist(err) {
+		return false
+	}
+	dir := root
+	for {
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return false
+		}
+		if st, err := os.Stat(parent); err == nil {
+			if !st.IsDir() {
+				return false
+			}
+			return dirWritable(parent)
+		} else if !os.IsNotExist(err) {
+			return false
+		}
+		dir = parent
+	}
+}
+
+func dirWritable(dir string) bool {
+	f, err := os.CreateTemp(dir, ".probe-write-*")
 	if err != nil {
 		return false
 	}

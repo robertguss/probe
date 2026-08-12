@@ -83,14 +83,7 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 		t.Fatalf("auth list exit=%d", res.ExitCode)
 	}
 
-	id, _, err := e2.allocateExchangeID(sp, "courses")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id != "001-courses" {
-		t.Fatalf("id=%q", id)
-	}
-	err = e2.persistExchange(sp, id, savedRequestFile{
+	id, err := e2.persistExchange(sp, "courses", savedRequestFile{
 		Method:  "GET",
 		URL:     "https://ex.test/x?token=sekrit",
 		Headers: map[string]string{"Authorization": "Bearer super-secret-value", "Accept": "application/json"},
@@ -102,6 +95,33 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 	}, 12)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if id != "001-courses" {
+		t.Fatalf("id=%q", id)
+	}
+
+	id2, err := e2.persistExchange(sp, "header", savedRequestFile{
+		Method:  "GET",
+		URL:     "https://ex.test/y",
+		Headers: map[string]string{"X-API-Key": "super-secret-apikey-value", "Accept": "application/json"},
+		Auth:    "custom",
+	}, savedResponseFile{
+		Status:  200,
+		Headers: map[string]string{"Content-Type": "application/json"},
+		Body:    `{}`,
+	}, 3, "X-API-Key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	headerBytes, err := os.ReadFile(filepath.Join(sp.Requests, id2+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(headerBytes), "super-secret-apikey-value") {
+		t.Fatalf("custom header secret in request artifact: %s", headerBytes)
+	}
+	if !strings.Contains(string(headerBytes), "[REDACTED]") {
+		t.Fatalf("expected custom header redaction: %s", headerBytes)
 	}
 
 	reqBytes, err := os.ReadFile(filepath.Join(sp.Requests, "001-courses.json"))

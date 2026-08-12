@@ -24,7 +24,7 @@ func TestEnvelopeJSONAndExitCodes(t *testing.T) {
 			wantOK:   true,
 			wantSubstr: []string{
 				`"ok":true`,
-				`"command":"version"`,
+				`"command":"probe version"`,
 				`"error":null`,
 				`"exitCode":0`,
 				`"version":"0.1.0"`,
@@ -37,7 +37,7 @@ func TestEnvelopeJSONAndExitCodes(t *testing.T) {
 			wantOK:   false,
 			wantSubstr: []string{
 				`"ok":false`,
-				`"command":"hit"`,
+				`"command":"probe hit"`,
 				`"code":"usage"`,
 				`"exitCode":2`,
 				`"probe hit GET https://example.com --json"`,
@@ -134,4 +134,23 @@ func TestFailRateLimitedInvariant(t *testing.T) {
 		}
 	}()
 	_ = e.fail("hit", ExitHTTP5xx, "rate_limited", "bad", "", nil)
+}
+
+func TestFormatCommand(t *testing.T) {
+	tests := []struct {
+		in, want string
+	}{
+		{"version", "probe version"},
+		{"hit", "probe hit"},
+		{"auth set", "probe auth set"},
+		{"probe hit", "probe hit"},
+		{"probe", "probe"},
+		{"", ""},
+		{"auth.set", "probe auth set"},
+	}
+	for _, tt := range tests {
+		if got := formatCommand(tt.in); got != tt.want {
+			t.Fatalf("formatCommand(%q)=%q want %q", tt.in, got, tt.want)
+		}
+	}
 }

@@ -27,7 +27,7 @@ func TestClassifyHTTP(t *testing.T) {
 	}{
 		{200, false, ExitSuccess},
 		{201, false, ExitSuccess},
-		{301, false, ExitSuccess},
+		{301, false, ExitHTTP4xx},
 		{400, false, ExitHTTP4xx},
 		{404, false, ExitHTTP4xx},
 		{429, false, ExitHTTP4xx},
@@ -53,6 +53,7 @@ func TestHitExitCodesFromStatus(t *testing.T) {
 		code   string
 	}{
 		{name: "200", status: 200, body: `{"ok":true}`, want: ExitSuccess},
+		{name: "301", status: 301, body: `moved`, want: ExitHTTP4xx, code: "http_error"},
 		{name: "404", status: 404, body: `missing`, want: ExitHTTP4xx, code: "http_error"},
 		{name: "500", status: 500, body: `err`, want: ExitHTTP5xx, code: "http_error"},
 	}
@@ -189,14 +190,14 @@ func TestHitEnvelopeShape(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
 		t.Fatal(err)
 	}
-	if !env.OK || env.Command != "hit" || env.Error != nil {
+	if !env.OK || env.Command != "probe hit" || env.Error != nil {
 		t.Fatalf("env=%+v", env)
 	}
 	if env.Meta.ExitCode != ExitSuccess || env.Meta.Version != Version {
 		t.Fatalf("meta=%+v", env.Meta)
 	}
 	raw := out.String()
-	for _, s := range []string{`"ok":true`, `"command":"hit"`, `"error":null`, `"status":200`, `"method":"GET"`} {
+	for _, s := range []string{`"ok":true`, `"command":"probe hit"`, `"error":null`, `"status":200`, `"method":"GET"`} {
 		if !strings.Contains(raw, s) {
 			t.Fatalf("missing %s in %s", s, raw)
 		}
@@ -359,6 +360,128 @@ func TestHitGoldenPathHTTPT(t *testing.T) {
 				t.Fatalf("last missing id %s: %s", hitID, out.String())
 			}
 		}
+	}
+}
+
+func TestHitHeaderAuthRedactedAndReplay(t *testing.T) {
+	const secret = "super-secret-apikey-value"
+	var sent []string
+	rt := roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		sent = append(sent, r.Header.Get("X-API-Key"))
+		return &http.Response{
+			StatusCode: 200,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+			Request:    r,
+		}, nil
+	})
+	dir := t.TempDir()
+	spike := filepath.Join(dir, ".probe")
+	var out, errBuf bytes.Buffer
+	e := New(Options{
+		Stdout:   &out,
+		Stderr:   &errBuf,
+		HTTP:     rt,
+		Getwd:    func() (string, error) { return dir, nil },
+		SpikeDir: spike,
+		Environ:  []string{"API_KEY=" + secret},
+	})
+	ctx := context.Background()
+	if res := e.Run(ctx, []string{"init", "--json"}); res.ExitCode != ExitSuccess {
+		t.Fatalf("init: %d %s", res.ExitCode, errBuf.String())
+	}
+	out.Reset()
+	errBuf.Reset()
+	if res := e.Run(ctx, []string{"auth", "set", "custom", "--type", "header", "--name", "X-API-Key", "--value-env", "API_KEY", "--json"}); res.ExitCode != ExitSuccess {
+		t.Fatalf("auth set: %d %s", res.ExitCode, errBuf.String())
+	}
+
+	out.Reset()
+	errBuf.Reset()
+	res := e.Run(ctx, []string{"hit", "GET", "https://example.test/x", "--auth", "custom", "--dry-run", "--json"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("dry-run exit=%d %s", res.ExitCode, errBuf.String())
+	}
+	raw := out.String()
+	if strings.Contains(raw, secret) {
+		t.Fatalf("header auth secret leaked in dry-run: %s", raw)
+	}
+	if !strings.Contains(raw, "[REDACTED]") {
+		t.Fatalf("dry-run missing redaction: %s", raw)
+	}
+	if len(sent) != 0 {
+		t.Fatalf("dry-run hit the network: %v", sent)
+	}
+
+	out.Reset()
+	errBuf.Reset()
+	res = e.Run(ctx, []string{"hit", "GET", "https://example.test/x", "--auth", "custom", "--save", "headerauth", "--json"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("hit exit=%d %s", res.ExitCode, errBuf.String())
+	}
+	if strings.Contains(out.String(), secret) {
+		t.Fatalf("header auth secret leaked in hit envelope: %s", out.String())
+	}
+	id := res.Envelope.Meta.RequestID
+	if id == "" {
+		t.Fatalf("missing request id: %s", out.String())
+	}
+	reqBytes, err := os.ReadFile(filepath.Join(spike, "requests", id+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(reqBytes), secret) {
+		t.Fatalf("secret in saved request: %s", reqBytes)
+	}
+	if !strings.Contains(string(reqBytes), "[REDACTED]") {
+		t.Fatalf("saved request missing redaction: %s", reqBytes)
+	}
+	if len(sent) != 1 || sent[0] != secret {
+		t.Fatalf("hit sent X-API-Key=%q want secret", sent)
+	}
+
+	out.Reset()
+	errBuf.Reset()
+	res = e.Run(ctx, []string{"replay", id, "--json"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("replay exit=%d %s", res.ExitCode, errBuf.String())
+	}
+	if len(sent) != 2 {
+		t.Fatalf("replay calls=%d want 2 values=%v", len(sent), sent)
+	}
+	if sent[1] == redacted || sent[1] == "[REDACTED]" {
+		t.Fatalf("replay sent redacted marker as header value")
+	}
+	if sent[1] != secret {
+		t.Fatalf("replay sent X-API-Key=%q want secret", sent[1])
+	}
+	if strings.Contains(out.String(), secret) {
+		t.Fatalf("secret leaked in replay envelope: %s", out.String())
+	}
+}
+
+func TestHitDefaultContentTypeJSON(t *testing.T) {
+	var got string
+	rt := roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		got = r.Header.Get("Content-Type")
+		return &http.Response{
+			StatusCode: 200,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{}`)),
+			Request:    r,
+		}, nil
+	})
+	var out bytes.Buffer
+	e := New(Options{Stdout: &out, HTTP: rt})
+	res := e.Run(context.Background(), []string{
+		"hit", "POST", "https://example.test/items",
+		"--body", `{"a":1}`, "--no-save", "--json",
+	})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("exit=%d out=%s", res.ExitCode, out.String())
+	}
+	if got != "application/json" {
+		t.Fatalf("Content-Type=%q want application/json", got)
 	}
 }
 

@@ -18,6 +18,34 @@ type initData struct {
 	Created bool   `json:"created"`
 }
 
+type noteData struct {
+	Path string `json:"path"`
+	Text string `json:"text"`
+}
+
+type summaryData struct {
+	LastID   string `json:"last_id,omitempty"`
+	NextID   int    `json:"next_id"`
+	Requests int    `json:"requests"`
+}
+
+type findMatch struct {
+	ID     string `json:"id"`
+	Method string `json:"method"`
+	URL    string `json:"url"`
+}
+
+type findData struct {
+	Hint    string      `json:"hint"`
+	Matches []findMatch `json:"matches"`
+}
+
+type lastData struct {
+	ID       string            `json:"id"`
+	Request  savedRequestFile  `json:"request"`
+	Response savedResponseFile `json:"response"`
+}
+
 func (e *Engine) initSpike(_ context.Context, dir string) Result {
 	cwd, err := e.cwd()
 	if err != nil {
@@ -64,7 +92,6 @@ func (e *Engine) initSpike(_ context.Context, dir string) Result {
 			return e.fail("init", ExitTransport, "transport", err.Error(), "", nil)
 		}
 	}
-	e.spike = sp
 	return e.ok("init", initData{Path: sp.Root, Created: created})
 }
 
@@ -119,28 +146,45 @@ func exchangeID(n int, name string) string {
 	return fmt.Sprintf("%03d-%s", n, sanitizeSaveName(name))
 }
 
-func (e *Engine) persistExchange(sp SpikePaths, id string, req savedRequestFile, resp savedResponseFile, durationMS int64) error {
+func (e *Engine) persistExchange(sp SpikePaths, name string, req savedRequestFile, resp savedResponseFile, durationMS int64, redactExtra ...string) (string, error) {
+	sess, err := e.loadSession(sp)
+	if err != nil {
+		return "", err
+	}
+	n := sess.NextID
+	if n < 1 {
+		n = 1
+	}
+	id := exchangeID(n, name)
 	req.ID = id
 	resp.ID = id
 	req.URL = RedactURL(req.URL)
-	req.Headers = RedactHeaders(req.Headers)
+	req.Headers = RedactHeaders(req.Headers, redactExtra...)
 	resp.Headers = RedactHeaders(resp.Headers)
 
 	rb, err := json.MarshalIndent(req, "", "  ")
 	if err != nil {
-		return err
+		return "", err
 	}
 	rb = append(rb, '\n')
-	if err := writeFileAtomic(filepath.Join(sp.Requests, id+".json"), rb, 0o644); err != nil {
-		return err
+	reqPath := filepath.Join(sp.Requests, id+".json")
+	respPath := filepath.Join(sp.Responses, id+".json")
+	if err := writeFileAtomic(reqPath, rb, 0o644); err != nil {
+		return "", err
+	}
+	rollback := func() {
+		_ = os.Remove(reqPath)
+		_ = os.Remove(respPath)
 	}
 	sb, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
-		return err
+		rollback()
+		return "", err
 	}
 	sb = append(sb, '\n')
-	if err := writeFileAtomic(filepath.Join(sp.Responses, id+".json"), sb, 0o644); err != nil {
-		return err
+	if err := writeFileAtomic(respPath, sb, 0o644); err != nil {
+		rollback()
+		return "", err
 	}
 
 	entry := logEntry{
@@ -153,40 +197,48 @@ func (e *Engine) persistExchange(sp SpikePaths, id string, req savedRequestFile,
 	}
 	lb, err := json.Marshal(entry)
 	if err != nil {
-		return err
+		rollback()
+		return "", err
 	}
 	f, err := os.OpenFile(sp.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		return err
+		rollback()
+		return "", err
 	}
-	defer f.Close()
-	if _, err := f.Write(append(lb, '\n')); err != nil {
-		return err
+	_, werr := f.Write(append(lb, '\n'))
+	_ = f.Close()
+	if werr != nil {
+		rollback()
+		return "", werr
 	}
 
-	sess, err := e.loadSession(sp)
-	if err != nil {
-		return err
-	}
 	sess.LastID = id
-	return e.saveSession(sp, sess)
-}
-
-func (e *Engine) allocateExchangeID(sp SpikePaths, name string) (string, int, error) {
-	sess, err := e.loadSession(sp)
-	if err != nil {
-		return "", 0, err
-	}
-	n := sess.NextID
-	if n < 1 {
-		n = 1
-	}
-	id := exchangeID(n, name)
 	sess.NextID = n + 1
 	if err := e.saveSession(sp, sess); err != nil {
-		return "", 0, err
+		rollback()
+		return "", err
 	}
-	return id, n, nil
+	return id, nil
+}
+
+func (e *Engine) loadExchange(sp SpikePaths, id string) (savedRequestFile, savedResponseFile, error) {
+	var req savedRequestFile
+	var resp savedResponseFile
+	rb, err := os.ReadFile(filepath.Join(sp.Requests, id+".json"))
+	if err != nil {
+		return req, resp, err
+	}
+	sb, err := os.ReadFile(filepath.Join(sp.Responses, id+".json"))
+	if err != nil {
+		return req, resp, err
+	}
+	if err := json.Unmarshal(rb, &req); err != nil {
+		return req, resp, err
+	}
+	if err := json.Unmarshal(sb, &resp); err != nil {
+		return req, resp, err
+	}
+	return req, resp, nil
 }
 
 func (e *Engine) now() time.Time {
@@ -197,9 +249,8 @@ func (e *Engine) now() time.Time {
 }
 
 func (e *Engine) note(_ context.Context, text string) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("note")
 	if !ok {
-		res.Envelope.Command = "note"
 		return res
 	}
 	text = strings.TrimSpace(text)
@@ -215,19 +266,12 @@ func (e *Engine) note(_ context.Context, text string) Result {
 	if _, err := f.WriteString(line); err != nil {
 		return e.fail("note", ExitTransport, "transport", err.Error(), "", nil)
 	}
-	return e.ok("note", map[string]string{"path": sp.Notes, "text": text})
-}
-
-type summaryData struct {
-	LastID   string `json:"last_id,omitempty"`
-	NextID   int    `json:"next_id"`
-	Requests int    `json:"requests"`
+	return e.ok("note", noteData{Path: sp.Notes, Text: text})
 }
 
 func (e *Engine) summary(_ context.Context) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("summary")
 	if !ok {
-		res.Envelope.Command = "summary"
 		return res
 	}
 	sess, err := e.loadSession(sp)
@@ -248,32 +292,27 @@ func (e *Engine) summary(_ context.Context) Result {
 }
 
 func (e *Engine) replay(ctx context.Context, id string) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("replay")
 	if !ok {
-		res.Envelope.Command = "replay"
 		return res
 	}
-	id = strings.TrimSpace(id)
+	id = strings.TrimSuffix(strings.TrimSpace(id), ".json")
 	if id == "" {
 		return e.usageError("replay", "missing request id", "probe replay 001-courses --json")
 	}
-	id = strings.TrimSuffix(id, ".json")
 	path := filepath.Join(sp.Requests, id+".json")
 	if _, err := os.Stat(path); err != nil {
 		matches, _ := filepath.Glob(filepath.Join(sp.Requests, "*"+id+"*.json"))
-		if len(matches) == 1 {
-			id = strings.TrimSuffix(filepath.Base(matches[0]), ".json")
-			path = matches[0]
-		} else {
+		if len(matches) != 1 {
 			return e.fail("replay", ExitUsage, "not_found", fmt.Sprintf("request %q not found", id), "probe last --json", []string{"probe last --json"})
 		}
+		id = strings.TrimSuffix(filepath.Base(matches[0]), ".json")
 	}
-	b, err := os.ReadFile(path)
+	req, _, err := e.loadExchange(sp, id)
 	if err != nil {
-		return e.fail("replay", ExitTransport, "transport", err.Error(), "", nil)
-	}
-	var req savedRequestFile
-	if err := json.Unmarshal(b, &req); err != nil {
+		if os.IsNotExist(err) {
+			return e.fail("replay", ExitUsage, "not_found", fmt.Sprintf("request %q not found", id), "probe last --json", []string{"probe last --json"})
+		}
 		return e.fail("replay", ExitTransport, "transport", err.Error(), "", nil)
 	}
 	in := HitInput{
@@ -282,14 +321,14 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 		Auth:    req.Auth,
 		Body:    req.Body,
 		Save:    "replay",
-		Retries: 2,
-		Timeout: 30 * time.Second,
-		MaxWait: 60 * time.Second,
-		MaxBody: 1 << 20,
+		Retries: defaultRetries,
+		Timeout: defaultTimeout,
+		MaxWait: defaultMaxWait,
+		MaxBody: defaultMaxBody,
 		Follow:  strings.EqualFold(req.Method, "GET"),
 	}
 	for k, v := range req.Headers {
-		if strings.EqualFold(k, "Authorization") || strings.EqualFold(k, "Cookie") {
+		if secretHeaderName(k, v) {
 			continue
 		}
 		in.Headers = append(in.Headers, k+":"+v)
@@ -298,9 +337,8 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 }
 
 func (e *Engine) find(_ context.Context, hint string) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("find")
 	if !ok {
-		res.Envelope.Command = "find"
 		return res
 	}
 	hint = strings.TrimSpace(hint)
@@ -311,12 +349,7 @@ func (e *Engine) find(_ context.Context, hint string) Result {
 	if err != nil {
 		return e.fail("find", ExitTransport, "transport", err.Error(), "", nil)
 	}
-	type hit struct {
-		ID     string `json:"id"`
-		Method string `json:"method"`
-		URL    string `json:"url"`
-	}
-	var found []hit
+	found := make([]findMatch, 0)
 	h := strings.ToLower(hint)
 	for _, ent := range entries {
 		if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".json") {
@@ -332,16 +365,15 @@ func (e *Engine) find(_ context.Context, hint string) Result {
 			continue
 		}
 		if strings.Contains(strings.ToLower(id), h) || strings.Contains(strings.ToLower(req.URL), h) || strings.Contains(strings.ToLower(req.Method), h) {
-			found = append(found, hit{ID: id, Method: req.Method, URL: req.URL})
+			found = append(found, findMatch{ID: id, Method: req.Method, URL: req.URL})
 		}
 	}
-	return e.ok("find", map[string]any{"hint": hint, "matches": found})
+	return e.ok("find", findData{Hint: hint, Matches: found})
 }
 
 func (e *Engine) lastExchange(_ context.Context) Result {
-	sp, res, ok := e.requireSpike()
+	sp, res, ok := e.requireSpike("last")
 	if !ok {
-		res.Envelope.Command = "last"
 		return res
 	}
 	sess, err := e.loadSession(sp)
@@ -351,27 +383,14 @@ func (e *Engine) lastExchange(_ context.Context) Result {
 	if sess.LastID == "" {
 		return e.fail("last", ExitUsage, "not_found", "no recorded exchange yet", "probe hit GET https://example.com --json", []string{"probe hit GET https://example.com --json"})
 	}
-	rb, err := os.ReadFile(filepath.Join(sp.Requests, sess.LastID+".json"))
+	req, resp, err := e.loadExchange(sp, sess.LastID)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return e.fail("last", ExitUsage, "not_found", fmt.Sprintf("request %q not found", sess.LastID), "probe hit GET https://example.com --json", nil)
+		}
 		return e.fail("last", ExitTransport, "transport", err.Error(), "", nil)
 	}
-	sb, err := os.ReadFile(filepath.Join(sp.Responses, sess.LastID+".json"))
-	if err != nil {
-		return e.fail("last", ExitTransport, "transport", err.Error(), "", nil)
-	}
-	var req savedRequestFile
-	var resp savedResponseFile
-	if err := json.Unmarshal(rb, &req); err != nil {
-		return e.fail("last", ExitTransport, "transport", err.Error(), "", nil)
-	}
-	if err := json.Unmarshal(sb, &resp); err != nil {
-		return e.fail("last", ExitTransport, "transport", err.Error(), "", nil)
-	}
-	out := e.ok("last", map[string]any{
-		"id":       sess.LastID,
-		"request":  req,
-		"response": resp,
-	})
+	out := e.ok("last", lastData{ID: sess.LastID, Request: req, Response: resp})
 	out.Envelope.Meta.RequestID = sess.LastID
 	return out
 }

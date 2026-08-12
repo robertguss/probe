@@ -1,5 +1,7 @@
 package engine
 
+import "strings"
+
 // ExitCode is the process status paired with Envelope.Meta.ExitCode.
 type ExitCode int
 
@@ -43,12 +45,20 @@ type Meta struct {
 	RequestID string   `json:"requestId,omitempty"`
 }
 
+func formatCommand(command string) string {
+	command = strings.TrimSpace(command)
+	if command == "" || command == "probe" || strings.HasPrefix(command, "probe ") {
+		return command
+	}
+	return "probe " + strings.ReplaceAll(command, ".", " ")
+}
+
 func (e *Engine) ok(command string, data any) Result {
 	return Result{
 		ExitCode: ExitSuccess,
 		Envelope: Envelope{
 			OK:      true,
-			Command: command,
+			Command: formatCommand(command),
 			Data:    data,
 			Error:   nil,
 			Meta: Meta{
@@ -60,6 +70,10 @@ func (e *Engine) ok(command string, data any) Result {
 }
 
 func (e *Engine) fail(command string, code ExitCode, errCode, msg, hint string, next []string) Result {
+	return e.failWithData(command, code, errCode, msg, hint, next, nil)
+}
+
+func (e *Engine) failWithData(command string, code ExitCode, errCode, msg, hint string, next []string, data any) Result {
 	if code == ExitRateLimited && errCode != "rate_limited" {
 		panic("ExitRateLimited requires error.code rate_limited")
 	}
@@ -70,7 +84,8 @@ func (e *Engine) fail(command string, code ExitCode, errCode, msg, hint string, 
 		ExitCode: code,
 		Envelope: Envelope{
 			OK:      false,
-			Command: command,
+			Command: formatCommand(command),
+			Data:    data,
 			Error: &ErrorBody{
 				Code:    errCode,
 				Message: msg,

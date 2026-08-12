@@ -96,6 +96,26 @@ func TestRedactHeaders(t *testing.T) {
 	}
 }
 
+func TestRedactHeadersExtraNames(t *testing.T) {
+	in := map[string]string{
+		"X-API-Key": "super-secret-apikey-value",
+		"Accept":    "application/json",
+	}
+	got := RedactHeaders(in, "X-API-Key")
+	if got["X-API-Key"] != redacted {
+		t.Fatalf("X-API-Key=%q want %q", got["X-API-Key"], redacted)
+	}
+	if got["Accept"] != "application/json" {
+		t.Fatalf("Accept mutated: %q", got["Accept"])
+	}
+	if in["X-API-Key"] != "super-secret-apikey-value" {
+		t.Fatal("input mutated")
+	}
+	if strings.Contains(got["X-API-Key"], "super-secret-apikey-value") {
+		t.Fatal("secret leaked")
+	}
+}
+
 func TestRedactURL(t *testing.T) {
 	tests := []struct {
 		name string

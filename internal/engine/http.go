@@ -14,7 +14,7 @@ type roundTripOutcome struct {
 	Header     http.Header
 	Body       []byte
 	Attempts   int
-	LimitedOut bool // retries exhausted on 429
+	LimitedOut bool
 }
 
 func (e *Engine) httpClient(timeout time.Duration, follow bool) *http.Client {
@@ -70,9 +70,6 @@ func (e *Engine) sleep(ctx context.Context, d time.Duration) error {
 }
 
 func (e *Engine) doHTTP(ctx context.Context, client *http.Client, req *http.Request, retries int, maxWait time.Duration, noRetry bool, rps float64) (roundTripOutcome, error) {
-	e.hitMu.Lock()
-	defer e.hitMu.Unlock()
-
 	if rps > 0 {
 		minGap := time.Duration(float64(time.Second) / rps)
 		if !e.lastHitAt.IsZero() {
@@ -121,41 +118,31 @@ func (e *Engine) doHTTP(ctx context.Context, client *http.Client, req *http.Requ
 
 		retryable := resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable
 		if !retryable || attempt == maxAttempts {
-			if retryable && attempt == maxAttempts && resp.StatusCode == http.StatusTooManyRequests {
-				out.LimitedOut = true
-			}
-			return out, nil
+			break
 		}
 
 		delay := time.Duration(attempt) * 200 * time.Millisecond
 		if d, ok := parseRetryAfter(resp.Header, e.now()); ok {
 			delay = d
 		}
-		if maxWait > 0 && waited+delay > maxWait {
+		if maxWait > 0 {
 			remain := maxWait - waited
-			if remain < 0 {
-				remain = 0
+			if remain <= 0 {
+				break
 			}
-			if err := e.sleep(ctx, remain); err != nil {
-				return out, err
+			if delay > remain {
+				delay = remain
 			}
-			waited += remain
-			if resp.StatusCode == http.StatusTooManyRequests {
-				out.LimitedOut = true
-			}
-			return out, nil
 		}
 		if err := e.sleep(ctx, delay); err != nil {
 			return out, err
 		}
 		waited += delay
 		if maxWait > 0 && waited >= maxWait {
-			if resp.StatusCode == http.StatusTooManyRequests {
-				out.LimitedOut = true
-			}
-			return out, nil
+			break
 		}
 	}
+	out.LimitedOut = out.Status == http.StatusTooManyRequests
 	return out, nil
 }
 
@@ -175,9 +162,9 @@ func classifyHTTP(status int, rateLimited bool) ExitCode {
 		return ExitRateLimited
 	}
 	switch {
-	case status >= 200 && status < 400:
+	case status >= 200 && status < 300:
 		return ExitSuccess
-	case status >= 400 && status < 500:
+	case status >= 300 && status < 500:
 		return ExitHTTP4xx
 	case status >= 500:
 		return ExitHTTP5xx

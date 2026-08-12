@@ -51,194 +51,100 @@ type hitData struct {
 	Truncated  bool              `json:"truncated,omitempty"`
 }
 
+type hitPlan struct {
+	method     string
+	resolved   string
+	example    string
+	headers    map[string]string
+	body       []byte
+	authName   string
+	authHeader string
+	timeout    time.Duration
+	maxWait    time.Duration
+	maxBody    int64
+	retries    int
+	rps        float64
+	follow     bool
+	dryRun     bool
+	noSave     bool
+	noRetry    bool
+	save       string
+	fields     string
+	sp         SpikePaths
+	hasSpike   bool
+}
+
 func (e *Engine) hit(ctx context.Context, in HitInput) Result {
-	example := "probe hit GET https://example.com --json"
-
-	method := strings.ToUpper(strings.TrimSpace(in.Method))
-	if method == "" {
-		return e.usageError("hit", "missing METHOD", example)
+	plan, res, ok := e.planHit(in)
+	if !ok {
+		return res
 	}
-	rawURL := strings.TrimSpace(in.URL)
-	if rawURL == "" {
-		return e.usageError("hit", "missing URL", example)
-	}
-	if in.Body != "" && in.BodyFile != "" {
-		return e.usageError("hit", "use only one of --body or --file", `probe hit POST https://example.com --body '{"a":1}' --json`)
-	}
-
-	sp, hasSpike := SpikePaths{}, false
-	if sp2, err := e.openSpike(); err == nil {
-		if _, statErr := os.Stat(sp2.Root); statErr == nil {
-			sp = sp2
-			hasSpike = true
-		}
-	}
-
-	base := strings.TrimSpace(in.Base)
-	rps := in.RPS
-	if in.API != "" {
-		if catBase, catRPS, ok := e.loadCatalogDefaults(in.API); ok {
-			if base == "" {
-				base = catBase
-			}
-			if rps <= 0 && catRPS > 0 {
-				rps = catRPS
-			}
-		}
-	}
-	if base == "" && hasSpike {
-		if cfg, err := e.loadConfig(sp); err == nil {
-			base = cfg.Base
-		}
-	}
-
-	resolved, err := resolveURL(rawURL, base)
-	if err != nil {
-		return e.usageError("hit", err.Error(), example)
-	}
-
-	body, err := e.readHitBody(in)
-	if err != nil {
-		return e.fail("hit", ExitTransport, "transport", err.Error(), "", nil)
-	}
-
-	headers := map[string]string{}
-	for _, h := range in.Headers {
-		name, val, ok := splitHeader(h)
-		if !ok {
-			return e.usageError("hit", "invalid --header (want Name:Value)", `probe hit GET https://example.com --header Accept:application/json --json`)
-		}
-		headers[name] = val
-	}
-	if in.ContentType != "" {
-		headers["Content-Type"] = in.ContentType
-	}
-
-	u, err := url.Parse(resolved)
-	if err != nil {
-		return e.usageError("hit", "invalid URL: "+err.Error(), example)
-	}
-	q := u.Query()
-	for _, pair := range in.Query {
-		k, v, ok := strings.Cut(pair, "=")
-		if !ok || k == "" {
-			return e.usageError("hit", "invalid --query (want key=value)", `probe hit GET https://example.com --query page=1 --json`)
-		}
-		q.Add(k, v)
-	}
-	u.RawQuery = q.Encode()
-	resolved = u.String()
-
-	var authName string
-	if in.Auth != "" {
-		if !hasSpike {
-			return e.usageError("hit", "not a probe workspace (no .probe/); run init first", "probe init --json")
-		}
-		profiles, err := e.loadAuthProfiles(sp)
-		if err != nil {
-			return e.fail("hit", ExitTransport, "transport", err.Error(), "", nil)
-		}
-		p, ok := profiles[in.Auth]
-		if !ok {
-			return e.fail("hit", ExitUsage, "not_found", fmt.Sprintf("auth profile %q not found", in.Auth), "probe auth list --json", []string{"probe auth list --json"})
-		}
-		h, envName, err := e.materializeAuth(p)
-		if err != nil {
-			ex := fmt.Sprintf("probe hit %s %s --auth %s --json", method, rawURL, in.Auth)
-			return e.authEnvMissing("hit", in.Auth, envName, ex)
-		}
-		authName = in.Auth
-		headers[authHeaderNameOr(p)] = h.materialize()
-	}
-
-	timeout := in.Timeout
-	if timeout <= 0 {
-		timeout = 30 * time.Second
-	}
-	maxBody := in.MaxBody
-	if maxBody <= 0 {
-		maxBody = 1 << 20
-	}
-	retries := in.Retries
-	if retries < 0 {
-		retries = 0
-	}
-	maxWait := in.MaxWait
-	if maxWait <= 0 {
-		maxWait = 60 * time.Second
-	}
-
-	planHeaders := RedactHeaders(headers)
-	planURL := RedactURL(resolved)
-
-	if in.DryRun {
-		data := hitData{
-			Method:  method,
+	planHeaders := RedactHeaders(plan.headers, plan.authHeader)
+	planURL := RedactURL(plan.resolved)
+	if plan.dryRun {
+		return e.ok("hit", hitData{
+			Method:  plan.method,
 			URL:     planURL,
 			Headers: planHeaders,
-			Body:    string(body),
+			Body:    string(plan.body),
 			DryRun:  true,
-		}
-		return e.ok("hit", data)
+		})
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, resolved, nil)
+	req, err := http.NewRequestWithContext(ctx, plan.method, plan.resolved, nil)
 	if err != nil {
 		return e.fail("hit", ExitTransport, "transport", err.Error(), "", nil)
 	}
-	if len(body) > 0 {
-		req.Body = io.NopCloser(bytes.NewReader(body))
-		req.ContentLength = int64(len(body))
+	if len(plan.body) > 0 {
+		req.Body = io.NopCloser(bytes.NewReader(plan.body))
+		req.ContentLength = int64(len(plan.body))
 		req.GetBody = func() (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(body)), nil
+			return io.NopCloser(bytes.NewReader(plan.body)), nil
 		}
 	}
-	for k, v := range headers {
+	for k, v := range plan.headers {
 		req.Header.Set(k, v)
 	}
 
-	client := e.httpClient(timeout, in.Follow)
+	client := e.httpClient(plan.timeout, plan.follow)
 	started := e.now()
-	out, err := e.doHTTP(ctx, client, req, retries, maxWait, in.NoRetry, rps)
+	out, err := e.doHTTP(ctx, client, req, plan.retries, plan.maxWait, plan.noRetry, plan.rps)
 	dur := e.now().Sub(started)
 	if err != nil {
 		return e.fail("hit", ExitTransport, "transport", err.Error(), "", nil)
 	}
 
-	bodyOut, truncated := truncateBody(out.Body, maxBody)
-	saveName := in.Save
+	bodyOut, truncated := truncateBody(out.Body, plan.maxBody)
+	saveName := plan.save
 	if saveName == "" {
 		saveName = "request"
 	}
-	shouldSave := hasSpike && !in.NoSave
+	shouldSave := plan.hasSpike && !plan.noSave
 
 	var id string
 	if shouldSave {
-		var allocErr error
-		id, _, allocErr = e.allocateExchangeID(sp, saveName)
-		if allocErr != nil {
-			return e.fail("hit", ExitTransport, "transport", allocErr.Error(), "", nil)
-		}
 		reqFile := savedRequestFile{
-			Method:  method,
-			URL:     resolved,
-			Headers: headers,
-			Body:    string(body),
-			Auth:    authName,
+			Method:  plan.method,
+			URL:     plan.resolved,
+			Headers: plan.headers,
+			Body:    string(plan.body),
+			Auth:    plan.authName,
 		}
 		respFile := savedResponseFile{
 			Status:  out.Status,
 			Headers: headerMap(out.Header),
 			Body:    string(bodyOut),
 		}
-		if err := e.persistExchange(sp, id, reqFile, respFile, dur.Milliseconds()); err != nil {
-			return e.fail("hit", ExitTransport, "transport", err.Error(), "", nil)
+		var persistErr error
+		id, persistErr = e.persistExchange(plan.sp, saveName, reqFile, respFile, dur.Milliseconds(), plan.authHeader)
+		if persistErr != nil {
+			return e.fail("hit", ExitTransport, "transport", persistErr.Error(), "", nil)
 		}
 	}
 
 	data := hitData{
 		ID:         id,
-		Method:     method,
+		Method:     plan.method,
 		URL:        planURL,
 		Status:     out.Status,
 		Headers:    RedactHeaders(headerMap(out.Header)),
@@ -248,32 +154,167 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 		Saved:      shouldSave,
 		Truncated:  truncated,
 	}
-	if in.Fields != "" {
-		data = filterHitFields(data, in.Fields)
+	if plan.fields != "" {
+		data = filterHitFields(data, plan.fields)
 	}
-
-	code := classifyHTTP(out.Status, out.LimitedOut)
-	res := Result{}
-	switch code {
-	case ExitSuccess:
-		res = e.ok("hit", data)
-	case ExitRateLimited:
-		res = e.fail("hit", ExitRateLimited, "rate_limited", "retries exhausted on HTTP 429", "wait and retry with backoff", []string{example})
-		res.Envelope.Data = data
-	case ExitHTTP4xx:
-		res = e.fail("hit", ExitHTTP4xx, "http_error", fmt.Sprintf("HTTP %d", out.Status), "", nil)
-		res.Envelope.Data = data
-	case ExitHTTP5xx:
-		res = e.fail("hit", ExitHTTP5xx, "http_error", fmt.Sprintf("HTTP %d", out.Status), "", nil)
-		res.Envelope.Data = data
-	default:
-		res = e.fail("hit", ExitTransport, "transport", fmt.Sprintf("unexpected status %d", out.Status), "", nil)
-		res.Envelope.Data = data
-	}
+	res = e.classifyHitResult(out.Status, out.LimitedOut, data, plan.example)
 	if id != "" {
 		res.Envelope.Meta.RequestID = id
 	}
 	return res
+}
+
+func (e *Engine) classifyHitResult(status int, limited bool, data hitData, example string) Result {
+	code := classifyHTTP(status, limited)
+	switch code {
+	case ExitSuccess:
+		return e.ok("hit", data)
+	case ExitRateLimited:
+		return e.failWithData("hit", ExitRateLimited, "rate_limited", "retries exhausted on HTTP 429", "wait and retry with backoff", []string{example}, data)
+	case ExitHTTP4xx, ExitHTTP5xx:
+		return e.failWithData("hit", code, "http_error", fmt.Sprintf("HTTP %d", status), "", nil, data)
+	default:
+		return e.failWithData("hit", ExitTransport, "transport", fmt.Sprintf("unexpected status %d", status), "", nil, data)
+	}
+}
+
+func (e *Engine) planHit(in HitInput) (hitPlan, Result, bool) {
+	example := "probe hit GET https://example.com --json"
+	method := strings.ToUpper(strings.TrimSpace(in.Method))
+	if method == "" {
+		return hitPlan{}, e.usageError("hit", "missing METHOD", example), false
+	}
+	rawURL := strings.TrimSpace(in.URL)
+	if rawURL == "" {
+		return hitPlan{}, e.usageError("hit", "missing URL", example), false
+	}
+	if in.Body != "" && in.BodyFile != "" {
+		return hitPlan{}, e.usageError("hit", "use only one of --body or --file", `probe hit POST https://example.com --body '{"a":1}' --json`), false
+	}
+
+	plan := hitPlan{
+		method:  method,
+		example: example,
+		dryRun:  in.DryRun,
+		noSave:  in.NoSave,
+		noRetry: in.NoRetry,
+		save:    in.Save,
+		fields:  in.Fields,
+		follow:  in.Follow,
+		rps:     in.RPS,
+		timeout: in.Timeout,
+		maxWait: in.MaxWait,
+		maxBody: in.MaxBody,
+		retries: in.Retries,
+	}
+	if plan.timeout <= 0 {
+		plan.timeout = defaultTimeout
+	}
+	if plan.maxBody <= 0 {
+		plan.maxBody = defaultMaxBody
+	}
+	if plan.retries < 0 {
+		plan.retries = 0
+	}
+	if plan.maxWait <= 0 {
+		plan.maxWait = defaultMaxWait
+	}
+
+	if sp2, err := e.openSpike(); err == nil {
+		if _, statErr := os.Stat(sp2.Root); statErr == nil {
+			plan.sp = sp2
+			plan.hasSpike = true
+		}
+	}
+
+	base := strings.TrimSpace(in.Base)
+	if in.API != "" {
+		catBase, catRPS := e.loadCatalogDefaults(in.API)
+		if base == "" {
+			base = catBase
+		}
+		if plan.rps <= 0 && catRPS > 0 {
+			plan.rps = catRPS
+		}
+	}
+	if base == "" && plan.hasSpike {
+		if cfg, err := e.loadConfig(plan.sp); err == nil {
+			base = cfg.Base
+		}
+	}
+
+	resolved, err := resolveURL(rawURL, base)
+	if err != nil {
+		return hitPlan{}, e.usageError("hit", err.Error(), example), false
+	}
+
+	body, err := e.readHitBody(in)
+	if err != nil {
+		return hitPlan{}, e.fail("hit", ExitTransport, "transport", err.Error(), "", nil), false
+	}
+	plan.body = body
+
+	headers := map[string]string{}
+	for _, h := range in.Headers {
+		name, val, ok := splitHeader(h)
+		if !ok {
+			return hitPlan{}, e.usageError("hit", "invalid --header (want Name:Value)", `probe hit GET https://example.com --header Accept:application/json --json`), false
+		}
+		headers[name] = val
+	}
+	if in.ContentType != "" {
+		headers["Content-Type"] = in.ContentType
+	} else if len(body) > 0 && headerLookup(headers, "Content-Type") == "" {
+		headers["Content-Type"] = "application/json"
+	}
+
+	u, err := url.Parse(resolved)
+	if err != nil {
+		return hitPlan{}, e.usageError("hit", "invalid URL: "+err.Error(), example), false
+	}
+	q := u.Query()
+	for _, pair := range in.Query {
+		k, v, ok := strings.Cut(pair, "=")
+		if !ok || k == "" {
+			return hitPlan{}, e.usageError("hit", "invalid --query (want key=value)", `probe hit GET https://example.com --query page=1 --json`), false
+		}
+		q.Add(k, v)
+	}
+	u.RawQuery = q.Encode()
+	plan.resolved = u.String()
+
+	if in.Auth != "" {
+		if !plan.hasSpike {
+			return hitPlan{}, e.usageError("hit", "not a probe workspace (no .probe/); run init first", "probe init --json"), false
+		}
+		profiles, err := e.loadAuthProfiles(plan.sp)
+		if err != nil {
+			return hitPlan{}, e.fail("hit", ExitTransport, "transport", err.Error(), "", nil), false
+		}
+		p, found := profiles[in.Auth]
+		if !found {
+			return hitPlan{}, e.fail("hit", ExitUsage, "not_found", fmt.Sprintf("auth profile %q not found", in.Auth), "probe auth list --json", []string{"probe auth list --json"}), false
+		}
+		h, envName, err := e.materializeAuth(p)
+		if err != nil {
+			ex := fmt.Sprintf("probe hit %s %s --auth %s --json", method, rawURL, in.Auth)
+			return hitPlan{}, e.authEnvMissing("hit", in.Auth, envName, ex), false
+		}
+		plan.authName = in.Auth
+		plan.authHeader = authHeaderNameOr(p)
+		headers[plan.authHeader] = h.materialize()
+	}
+	plan.headers = headers
+	return plan, Result{}, true
+}
+
+func headerLookup(h map[string]string, name string) string {
+	for k, v := range h {
+		if strings.EqualFold(k, name) {
+			return v
+		}
+	}
+	return ""
 }
 
 func authHeaderNameOr(p AuthProfile) string {
