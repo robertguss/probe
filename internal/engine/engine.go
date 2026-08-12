@@ -34,9 +34,10 @@ type Options struct {
 type Engine struct {
 	opts    Options
 	environ map[string]string
+	spike   SpikePaths
 	jsonOut bool
-	last    Result
-	helped  bool
+	lastResult Result
+	helped     bool
 }
 
 // New builds an Engine with defaults for missing writers.
@@ -66,7 +67,7 @@ func New(opts Options) *Engine {
 // Run parses args, dispatches a command, writes output, and returns Result.
 // Never calls os.Exit.
 func (e *Engine) Run(ctx context.Context, args []string) Result {
-	e.last = Result{}
+	e.lastResult = Result{}
 	e.helped = false
 	e.jsonOut = e.opts.JSONDefault
 
@@ -85,11 +86,11 @@ func (e *Engine) Run(ctx context.Context, args []string) Result {
 		e.writeOutput(res)
 		return res
 	}
-	if e.last.Envelope.Command == "" {
+	if e.lastResult.Envelope.Command == "" {
 		return e.ok("help", nil)
 	}
-	e.writeOutput(e.last)
-	return e.last
+	e.writeOutput(e.lastResult)
+	return e.lastResult
 }
 
 func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
@@ -147,16 +148,16 @@ func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
 	root.AddCommand(e.stubCmd("quickstart", "print agent quickstart", `  probe quickstart --json`))
 	root.AddCommand(e.stubCmd("schema", "print JSON schema for envelopes", `  probe schema --json`))
 	root.AddCommand(e.stubCmd("doctor", "check workspace and catalog health", `  probe doctor --json`))
-	root.AddCommand(e.stubCmd("init", "create .probe/ spike workspace", `  probe init`))
-	root.AddCommand(e.authCmd())
+	root.AddCommand(e.initCmd(ctx))
+	root.AddCommand(e.authCmd(ctx))
 	root.AddCommand(e.stubCmd("hit", "send an HTTP request and record the exchange", `  fnox exec -- probe hit GET /api/v1/courses --auth canvas --base https://canvas.test --save courses --json
   probe hit GET https://httpbin.org/get --dry-run --json
   probe hit POST /items --body '{"a":1}' --auth api --json`))
 	root.AddCommand(e.stubCmd("replay", "replay a saved request by id", `  probe replay 001-courses --json`))
-	root.AddCommand(e.stubCmd("last", "show the last recorded exchange", `  probe last --json`))
+	root.AddCommand(e.lastCmd(ctx))
 	root.AddCommand(e.stubCmd("find", "search recorded exchanges", `  probe find courses --json`))
-	root.AddCommand(e.stubCmd("note", "append a note to .probe/notes.md", `  probe note "auth works with staging token"`))
-	root.AddCommand(e.stubCmd("summary", "summarize the spike session", `  probe summary --json`))
+	root.AddCommand(e.noteCmd(ctx))
+	root.AddCommand(e.summaryCmd(ctx))
 	root.AddCommand(e.stubCmd("promote", "promote a spike exchange into the catalog", `  probe promote canvas --endpoint get-courses --json
   probe promote canvas --request 001-courses --dry-run --json`))
 	root.AddCommand(e.catalogCmd())
@@ -171,7 +172,7 @@ func (e *Engine) versionCmd(ctx context.Context) *cobra.Command {
   probe version --json`,
 		Args: cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			e.last = e.version(ctx)
+			e.lastResult = e.version(ctx)
 			return nil
 		},
 	}
@@ -183,28 +184,142 @@ func (e *Engine) stubCmd(name, short, example string) *cobra.Command {
 		Short:   short,
 		Example: example,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			e.last = e.usageError(name, name+" not implemented", firstExampleLine(example))
+			e.lastResult = e.usageError(name, name+" not implemented", firstExampleLine(example))
 			return nil
 		},
 	}
 }
 
-func (e *Engine) authCmd() *cobra.Command {
+func (e *Engine) initCmd(ctx context.Context) *cobra.Command {
+	var dir string
+	cmd := &cobra.Command{
+		Use:   "init",
+		Short: "create .probe/ spike workspace",
+		Example: `  probe init
+  probe init --dir /tmp/spike --json`,
+		Args: cobra.NoArgs,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			e.lastResult = e.initSpike(ctx, dir)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&dir, "dir", "", "directory for .probe workspace (default: ./.probe)")
+	return cmd
+}
+
+func (e *Engine) lastCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:     "last",
+		Short:   "show the last recorded exchange",
+		Example: `  probe last --json`,
+		Args:    cobra.NoArgs,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			e.lastResult = e.lastExchange(ctx)
+			return nil
+		},
+	}
+}
+
+func (e *Engine) noteCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:     "note",
+		Short:   "append a note to .probe/notes.md",
+		Example: `  probe note "auth works with staging token" --json`,
+		Args:    cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			e.lastResult = e.note(ctx, args[0])
+			return nil
+		},
+	}
+}
+
+func (e *Engine) summaryCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:     "summary",
+		Short:   "summarize the spike session",
+		Example: `  probe summary --json`,
+		Args:    cobra.NoArgs,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			e.lastResult = e.summary(ctx)
+			return nil
+		},
+	}
+}
+
+func (e *Engine) authCmd(ctx context.Context) *cobra.Command {
 	auth := &cobra.Command{
 		Use:   "auth",
 		Short: "manage auth profiles (env-name refs only)",
 		Example: `  probe auth list --json
-  probe auth show canvas --json`,
+  probe auth show canvas --json
+  probe auth set canvas --type bearer --token-env CANVAS_TOKEN --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
 			e.helped = true
 			return nil
 		},
 	}
-	auth.AddCommand(e.stubCmd("set", "define an auth profile by env names", `  probe auth set canvas --type bearer --token-env CANVAS_TOKEN`))
-	auth.AddCommand(e.stubCmd("list", "list auth profiles", `  probe auth list --json`))
-	auth.AddCommand(e.stubCmd("show", "show one auth profile (env names only)", `  probe auth show canvas --json`))
+	auth.AddCommand(e.authSetCmd(ctx))
+	auth.AddCommand(e.authListCmd(ctx))
+	auth.AddCommand(e.authShowCmd(ctx))
 	return auth
+}
+
+func (e *Engine) authSetCmd(ctx context.Context) *cobra.Command {
+	var typ, tokenEnv, userEnv, passEnv, headerName, valueEnv string
+	cmd := &cobra.Command{
+		Use:   "set [name]",
+		Short: "define an auth profile by env names",
+		Example: `  probe auth set canvas --type bearer --token-env CANVAS_TOKEN --json
+  probe auth set basic --type basic --user-env API_USER --pass-env API_PASS --json
+  probe auth set custom --type header --name X-API-Key --value-env API_KEY --json`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			e.lastResult = e.authSet(ctx, AuthProfile{
+				Name:     args[0],
+				Type:     AuthType(typ),
+				TokenEnv: tokenEnv,
+				UserEnv:  userEnv,
+				PassEnv:  passEnv,
+				Header:   headerName,
+				ValueEnv: valueEnv,
+			})
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&typ, "type", "", "auth type: bearer|basic|header")
+	cmd.Flags().StringVar(&tokenEnv, "token-env", "", "env var name holding bearer token")
+	cmd.Flags().StringVar(&userEnv, "user-env", "", "env var name holding basic auth username")
+	cmd.Flags().StringVar(&passEnv, "pass-env", "", "env var name holding basic auth password")
+	cmd.Flags().StringVar(&headerName, "name", "", "header name for type=header")
+	cmd.Flags().StringVar(&valueEnv, "value-env", "", "env var name holding header value")
+	return cmd
+}
+
+func (e *Engine) authListCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:     "list",
+		Short:   "list auth profiles",
+		Example: `  probe auth list --json`,
+		Args:    cobra.NoArgs,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			e.lastResult = e.authList(ctx)
+			return nil
+		},
+	}
+}
+
+func (e *Engine) authShowCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:     "show [name]",
+		Short:   "show one auth profile (env names only)",
+		Example: `  probe auth show canvas --json`,
+		Args:    cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			e.lastResult = e.authShow(ctx, args[0])
+			return nil
+		},
+	}
 }
 
 func (e *Engine) catalogCmd() *cobra.Command {
