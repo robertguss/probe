@@ -113,6 +113,7 @@ func (e *Engine) rootCmd(ctx context.Context) *cobra.Command {
 		},
 	}
 	root.PersistentFlags().BoolVar(&jsonFlag, "json", false, "emit JSON envelope on stdout")
+	root.CompletionOptions.DisableDefaultCmd = true
 	root.SetHelpFunc(func(cmd *cobra.Command, _ []string) {
 		e.helped = true
 		out := cmd.OutOrStdout()
