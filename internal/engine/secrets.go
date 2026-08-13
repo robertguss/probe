@@ -40,6 +40,21 @@ func (w WireSecrets) apply(req *http.Request) {
 	}
 }
 
+func (w WireSecrets) String() string   { return redacted }
+func (w WireSecrets) GoString() string { return "WireSecrets{[REDACTED]}" }
+
+func (w WireSecrets) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + redacted + `"`), nil
+}
+
+func (w WireSecrets) names() []string {
+	out := make([]string, 0, len(w.headers))
+	for k := range w.headers {
+		out = append(out, k)
+	}
+	return out
+}
+
 func (w WireSecrets) overlayNames(h map[string]string) map[string]string {
 	out := copyHeaders(h)
 	if out == nil {

@@ -204,11 +204,9 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 	if id == "" {
 		return e.usageError("replay", "missing request id", "probe replay 001-courses --json")
 	}
-	store := e.spikeStore(sp)
-	policy := NewRedactionPolicy()
-	req, _, err := store.Load(ByID(id), policy)
+	req, _, err := e.loadSavedExchange(sp, ByID(id))
 	if err != nil {
-		req, _, err = store.Load(Hint(id), policy)
+		req, _, err = e.loadSavedExchange(sp, Hint(id))
 		if err != nil {
 			return e.fail("replay", ExitUsage, "not_found", fmt.Sprintf("request %q not found", id), "probe last --json", []string{"probe last --json"})
 		}
@@ -225,13 +223,7 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 		MaxBody: defaultMaxBody,
 		Follow:  strings.EqualFold(req.Method, "GET"),
 	}
-	if req.Auth != "" {
-		if profiles, err := e.loadAuthProfiles(sp); err == nil {
-			if p, ok := profiles[req.Auth]; ok {
-				policy = policyForAuth(p)
-			}
-		}
-	}
+	policy := e.policyForSavedAuth(sp, req.Auth)
 	for k, v := range req.Headers {
 		if v == redacted || policy.covers(k) || secretHeaderName(k, v) {
 			continue
@@ -262,7 +254,7 @@ func (e *Engine) lastExchange(_ context.Context) Result {
 	if !ok {
 		return res
 	}
-	req, resp, err := e.spikeStore(sp).Load(LastQuery(), NewRedactionPolicy())
+	req, resp, err := e.loadSavedExchange(sp, LastQuery())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return e.fail("last", ExitUsage, "not_found", "no recorded exchange yet", "probe hit GET https://example.com --json", []string{"probe hit GET https://example.com --json"})
@@ -272,4 +264,31 @@ func (e *Engine) lastExchange(_ context.Context) Result {
 	out := e.ok("last", lastData{ID: req.ID, Request: req, Response: resp})
 	out.Envelope.Meta.RequestID = req.ID
 	return out
+}
+
+func (e *Engine) policyForSavedAuth(sp SpikePaths, authName string) RedactionPolicy {
+	authName = strings.TrimSpace(authName)
+	if authName == "" {
+		return NewRedactionPolicy()
+	}
+	profiles, err := e.loadAuthProfiles(sp)
+	if err != nil {
+		return NewRedactionPolicy()
+	}
+	if p, ok := profiles[authName]; ok {
+		return policyForAuth(p)
+	}
+	return NewRedactionPolicy()
+}
+
+func (e *Engine) loadSavedExchange(sp SpikePaths, q Query) (savedRequestFile, savedResponseFile, error) {
+	store := e.spikeStore(sp)
+	req, resp, err := store.Load(q, NewRedactionPolicy())
+	if err != nil {
+		return req, resp, err
+	}
+	policy := e.policyForSavedAuth(sp, req.Auth)
+	req.Headers, req.URL = policy.redactForPersist(req.Headers, req.URL)
+	resp.Headers, _ = policy.redactForPersist(resp.Headers, "")
+	return req, resp, nil
 }

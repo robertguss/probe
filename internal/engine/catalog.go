@@ -209,14 +209,12 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		return res
 	}
 
-	store := e.spikeStore(sp)
-	policy := NewRedactionPolicy()
 	var req savedRequestFile
 	var resp savedResponseFile
 	var err error
 	reqID := strings.TrimSpace(in.Request)
 	if reqID == "" {
-		req, resp, err = store.Load(LastQuery(), policy)
+		req, resp, err = e.loadSavedExchange(sp, LastQuery())
 		if err != nil {
 			if os.IsNotExist(err) {
 				return e.usageError("promote", "no saved request to promote", "probe hit GET https://example.com --save demo --json")
@@ -225,7 +223,7 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		}
 		reqID = req.ID
 	} else {
-		req, resp, err = store.Load(ByID(reqID), policy)
+		req, resp, err = e.loadSavedExchange(sp, ByID(reqID))
 		if err != nil {
 			if os.IsNotExist(err) {
 				return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("request %q not found", reqID), "probe last --json", nil)
@@ -235,11 +233,19 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		reqID = req.ID
 	}
 	if req.Auth != "" {
-		if profiles, perr := e.loadAuthProfiles(sp); perr == nil {
-			if p, ok := profiles[req.Auth]; ok {
-				req.Headers, req.URL = policyForAuth(p).redactForPersist(req.Headers, req.URL)
-			}
+		profiles, perr := e.loadAuthProfiles(sp)
+		if perr != nil {
+			return e.fail("promote", ExitTransport, "transport", perr.Error(), "", nil)
 		}
+		p, ok := profiles[req.Auth]
+		if !ok {
+			return e.fail("promote", ExitUsage, "not_found",
+				fmt.Sprintf("auth profile %q not found for saved request", req.Auth),
+				"probe auth list --json", []string{"probe auth list --json"})
+		}
+		pol := policyForAuth(p)
+		req.Headers, req.URL = pol.redactForPersist(req.Headers, req.URL)
+		resp.Headers, _ = pol.redactForPersist(resp.Headers, "")
 	}
 
 	u, err := url.Parse(req.URL)
@@ -260,6 +266,11 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 	paths, err := catalogAPI(cat, apiName)
 	if err != nil {
 		return e.usageError("promote", "api name must be a slug like canvas or stripe", example)
+	}
+	fixtureName := epID + ".json"
+	fixturePath, err := containPath(paths.Fixtures, fixtureName)
+	if err != nil {
+		return e.usageError("promote", "invalid endpoint id", example)
 	}
 	var api CatalogAPI
 	if _, err := os.Stat(paths.APIYAML); err == nil {
@@ -293,7 +304,6 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		api.Name = apiName
 	}
 
-	fixtureName := epID + ".json"
 	fixtureRel := filepath.Join("fixtures", fixtureName)
 	ep := CatalogEndpoint{
 		ID:         epID,
@@ -325,7 +335,6 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 	}
 	fb = append(fb, '\n')
-	fixturePath := filepath.Join(paths.Fixtures, fixtureName)
 	if err := writeFileAtomic(fixturePath, fb, 0o644); err != nil {
 		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 	}

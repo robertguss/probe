@@ -239,8 +239,9 @@ func (s SpikeStore) Find(hint string) ([]findMatch, error) {
 		if err := json.Unmarshal(b, &req); err != nil {
 			continue
 		}
-		if strings.Contains(strings.ToLower(id), h) || strings.Contains(strings.ToLower(req.URL), h) || strings.Contains(strings.ToLower(req.Method), h) {
-			found = append(found, findMatch{ID: id, Method: req.Method, URL: req.URL})
+		urlOut := redactURL(req.URL)
+		if strings.Contains(strings.ToLower(id), h) || strings.Contains(strings.ToLower(urlOut), h) || strings.Contains(strings.ToLower(req.Method), h) {
+			found = append(found, findMatch{ID: id, Method: req.Method, URL: urlOut})
 		}
 	}
 	return found, nil

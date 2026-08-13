@@ -79,6 +79,39 @@ func TestSpikeStoreLoadRejectsTraversal(t *testing.T) {
 	}
 }
 
+func TestPromoteEndpointTraversalRejected(t *testing.T) {
+	dir := t.TempDir()
+	spike := filepath.Join(dir, ".probe")
+	cat := t.TempDir()
+	rt := roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{}`)),
+			Request:    r,
+		}, nil
+	})
+	var out bytes.Buffer
+	e := New(Options{
+		Stdout:     &out,
+		HTTP:       rt,
+		Getwd:      func() (string, error) { return dir, nil },
+		SpikeDir:   spike,
+		CatalogDir: cat,
+	})
+	ctx := context.Background()
+	if res := e.Run(ctx, []string{"init", "--json"}); res.ExitCode != ExitSuccess {
+		t.Fatalf("init: %d", res.ExitCode)
+	}
+	if res := e.Run(ctx, []string{"hit", "GET", "https://example.test/z", "--save", "z", "--json"}); res.ExitCode != ExitSuccess {
+		t.Fatalf("hit: %d", res.ExitCode)
+	}
+	res := e.Run(ctx, []string{"promote", "demoapi", "--endpoint", "../escape", "--json"})
+	if res.ExitCode == ExitSuccess {
+		t.Fatal("promote --endpoint ../escape succeeded")
+	}
+}
+
 func TestReplayPromoteRejectTraversalIDs(t *testing.T) {
 	dir := t.TempDir()
 	spike := filepath.Join(dir, ".probe")

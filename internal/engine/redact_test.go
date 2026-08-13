@@ -1,6 +1,9 @@
 package engine
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 )
@@ -187,12 +190,28 @@ func TestRedactURL(t *testing.T) {
 }
 
 func TestWireSecretsApplyOnly(t *testing.T) {
-	w := WireSecrets{headers: map[string]string{"Authorization": "Bearer super-secret"}}
+	const secret = "Bearer super-secret"
+	w := WireSecrets{headers: map[string]string{"Authorization": secret}}
 	overlay := w.overlayNames(map[string]string{"Accept": "application/json"})
 	if overlay["Authorization"] != redacted {
 		t.Fatalf("overlay Authorization=%q", overlay["Authorization"])
 	}
-	if strings.Contains(overlay["Authorization"], "super-secret") {
-		t.Fatal("secret in overlay")
+	if strings.Contains(fmt.Sprintf("%v", w), "super-secret") || strings.Contains(fmt.Sprintf("%#v", w), "super-secret") {
+		t.Fatal("WireSecrets fmt leaked secret")
+	}
+	req, err := http.NewRequest(http.MethodGet, "https://ex.test/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.apply(req)
+	if got := req.Header.Get("Authorization"); got != secret {
+		t.Fatalf("apply Authorization=%q", got)
+	}
+	b, err := json.Marshal(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(b) != `"[REDACTED]"` || strings.Contains(string(b), "super-secret") {
+		t.Fatalf("JSON=%s", b)
 	}
 }

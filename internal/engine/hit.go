@@ -148,7 +148,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 		Method:     plan.method,
 		URL:        planURL,
 		Status:     out.Status,
-		Headers:    NewRedactionPolicy().redactHeaders(headerMap(out.Header)),
+		Headers:    plan.policy.redactHeaders(headerMap(out.Header)),
 		Body:       string(bodyOut),
 		Attempts:   out.Attempts,
 		DurationMS: dur.Milliseconds(),
@@ -305,7 +305,7 @@ func (e *Engine) planHit(in HitInput) (hitPlan, Result, bool) {
 		plan.authName = in.Auth
 		plan.secrets = secrets
 		plan.policy = policyForAuth(p)
-		for name := range secrets.headers {
+		for _, name := range secrets.names() {
 			deleteHeaderFold(headers, name)
 		}
 	}
