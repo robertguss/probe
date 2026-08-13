@@ -91,12 +91,15 @@ func (e *Engine) resolveCatalog() (CatalogPaths, error) {
 	return CatalogPaths{Root: filepath.Join(home, ".local", "share", "probe", "catalog")}, nil
 }
 
-func catalogAPI(cat CatalogPaths, api string) APIPaths {
-	root := filepath.Join(cat.Root, api)
+func catalogAPI(cat CatalogPaths, api string) (APIPaths, error) {
+	root, err := containPath(cat.Root, api)
+	if err != nil {
+		return APIPaths{}, err
+	}
 	return APIPaths{
 		Root:     root,
 		APIYAML:  filepath.Join(root, "api.yaml"),
 		Fixtures: filepath.Join(root, "fixtures"),
 		Notes:    filepath.Join(root, "notes.md"),
-	}
+	}, nil
 }

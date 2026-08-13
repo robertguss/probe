@@ -130,7 +130,10 @@ func (e *Engine) catalogList(_ context.Context) Result {
 		if !ent.IsDir() {
 			continue
 		}
-		apiPath := catalogAPI(cat, ent.Name())
+		apiPath, err := catalogAPI(cat, ent.Name())
+		if err != nil {
+			continue
+		}
 		if _, err := os.Stat(apiPath.APIYAML); err == nil {
 			apis = append(apis, ent.Name())
 		}
@@ -148,7 +151,10 @@ func (e *Engine) catalogShow(_ context.Context, name, endpoint string) Result {
 	if !ok {
 		return res
 	}
-	paths := catalogAPI(cat, name)
+	paths, err := catalogAPI(cat, name)
+	if err != nil {
+		return e.usageError("catalog show", "invalid api name", example)
+	}
 	api, err := e.loadCatalogAPI(paths)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -177,7 +183,10 @@ func (e *Engine) catalogPath(_ context.Context, name string) Result {
 	if !ok {
 		return res
 	}
-	paths := catalogAPI(cat, name)
+	paths, err := catalogAPI(cat, name)
+	if err != nil {
+		return e.usageError("catalog path", "invalid api name", example)
+	}
 	return e.ok("catalog path", catalogPathData{API: name, Path: paths.Root})
 }
 
@@ -200,24 +209,37 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		return res
 	}
 
+	store := e.spikeStore(sp)
+	policy := NewRedactionPolicy()
+	var req savedRequestFile
+	var resp savedResponseFile
+	var err error
 	reqID := strings.TrimSpace(in.Request)
 	if reqID == "" {
-		sess, err := e.loadSession(sp)
+		req, resp, err = store.Load(LastQuery(), policy)
 		if err != nil {
+			if os.IsNotExist(err) {
+				return e.usageError("promote", "no saved request to promote", "probe hit GET https://example.com --save demo --json")
+			}
 			return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
 		}
-		reqID = sess.LastID
-	}
-	if reqID == "" {
-		return e.usageError("promote", "no saved request to promote", "probe hit GET https://example.com --save demo --json")
-	}
-
-	req, resp, err := e.loadExchange(sp, reqID)
-	if err != nil {
-		if os.IsNotExist(err) {
+		reqID = req.ID
+	} else {
+		req, resp, err = store.Load(ByID(reqID), policy)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("request %q not found", reqID), "probe last --json", nil)
+			}
 			return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("request %q not found", reqID), "probe last --json", nil)
 		}
-		return e.fail("promote", ExitTransport, "transport", err.Error(), "", nil)
+		reqID = req.ID
+	}
+	if req.Auth != "" {
+		if profiles, perr := e.loadAuthProfiles(sp); perr == nil {
+			if p, ok := profiles[req.Auth]; ok {
+				req.Headers, req.URL = policyForAuth(p).redactForPersist(req.Headers, req.URL)
+			}
+		}
 	}
 
 	u, err := url.Parse(req.URL)
@@ -235,7 +257,10 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 		epID = endpointSlug(req.Method, pathOnly)
 	}
 
-	paths := catalogAPI(cat, apiName)
+	paths, err := catalogAPI(cat, apiName)
+	if err != nil {
+		return e.usageError("promote", "api name must be a slug like canvas or stripe", example)
+	}
 	var api CatalogAPI
 	if _, err := os.Stat(paths.APIYAML); err == nil {
 		api, err = e.loadCatalogAPI(paths)
@@ -367,7 +392,11 @@ func (e *Engine) loadCatalogDefaults(apiName string) (base string, rps float64) 
 	if err != nil || cat.Root == "" {
 		return "", 0
 	}
-	api, err := e.loadCatalogAPI(catalogAPI(cat, apiName))
+	paths, err := catalogAPI(cat, apiName)
+	if err != nil {
+		return "", 0
+	}
+	api, err := e.loadCatalogAPI(paths)
 	if err != nil {
 		return "", 0
 	}

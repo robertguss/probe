@@ -137,7 +137,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 			Body:    string(bodyOut),
 		}
 		var persistErr error
-		id, persistErr = e.persistExchange(plan.sp, saveName, reqFile, respFile, dur.Milliseconds(), plan.policy)
+		id, persistErr = e.spikeStore(plan.sp).Commit(saveName, reqFile, respFile, dur.Milliseconds(), plan.policy)
 		if persistErr != nil {
 			return e.fail("hit", ExitTransport, "transport", persistErr.Error(), "", nil)
 		}

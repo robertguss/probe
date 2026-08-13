@@ -83,7 +83,7 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 		t.Fatalf("auth list exit=%d", res.ExitCode)
 	}
 
-	id, err := e2.persistExchange(sp, "courses", savedRequestFile{
+	id, err := e2.spikeStore(sp).Commit("courses", savedRequestFile{
 		Method:  "GET",
 		URL:     "https://ex.test/x?token=sekrit",
 		Headers: map[string]string{"Authorization": "Bearer super-secret-value", "Accept": "application/json"},
@@ -169,7 +169,7 @@ func TestPersistRedactsExtraAuthHeader(t *testing.T) {
 		t.Fatalf("init exit=%d", res.ExitCode)
 	}
 	sp := spikePathsFor(filepath.Join(dir, ".probe"))
-	id, err := e.persistExchange(sp, "header", savedRequestFile{
+	id, err := e.spikeStore(sp).Commit("header", savedRequestFile{
 		Method:  "GET",
 		URL:     "https://ex.test/y",
 		Headers: map[string]string{"X-API-Key": "super-secret-apikey-value", "Accept": "application/json"},
