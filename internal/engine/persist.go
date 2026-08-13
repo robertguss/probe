@@ -288,14 +288,14 @@ func (e *Engine) loadSavedExchange(sp SpikePaths, q Query) (savedRequestFile, sa
 	if err != nil {
 		req.Headers = scrubAllHeaders(req.Headers)
 		req.URL = redactURL(req.URL)
-		resp.Headers, _ = NewRedactionPolicy().redactForPersist(resp.Headers, "")
+		resp.Headers = scrubAllHeaders(resp.Headers)
 		return req, resp, nil
 	}
 	p, ok := profiles[authName]
 	if !ok {
 		req.Headers = scrubAllHeaders(req.Headers)
 		req.URL = redactURL(req.URL)
-		resp.Headers, _ = NewRedactionPolicy().redactForPersist(resp.Headers, "")
+		resp.Headers = scrubAllHeaders(resp.Headers)
 		return req, resp, nil
 	}
 	pol := policyForAuth(p)

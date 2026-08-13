@@ -229,11 +229,13 @@ func TestLastScrubsWhenAuthProfileMissing(t *testing.T) {
 	const secret = "legacy-custom-secret-value"
 	dir := t.TempDir()
 	spike := filepath.Join(dir, ".probe")
+	cat := t.TempDir()
 	var out bytes.Buffer
 	e := New(Options{
-		Stdout:   &out,
-		Getwd:    func() (string, error) { return dir, nil },
-		SpikeDir: spike,
+		Stdout:     &out,
+		Getwd:      func() (string, error) { return dir, nil },
+		SpikeDir:   spike,
+		CatalogDir: cat,
 	})
 	ctx := context.Background()
 	if res := e.Run(ctx, []string{"init", "--json"}); res.ExitCode != ExitSuccess {
@@ -243,7 +245,7 @@ func TestLastScrubsWhenAuthProfileMissing(t *testing.T) {
 	id, err := e.spikeStore(sp).Commit("legacy", savedRequestFile{
 		Method:  "GET",
 		URL:     "https://ex.test/legacy",
-		Headers: map[string]string{"X-Custom-Token": secret, "Accept": "application/json"},
+		Headers: map[string]string{"Accept": "application/json"},
 		Auth:    "gone",
 	}, savedResponseFile{
 		Status:  200,
@@ -253,9 +255,13 @@ func TestLastScrubsWhenAuthProfileMissing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Simulate a legacy unredacted artifact: rewrite request with raw secret after Commit.
-	raw := fmt.Sprintf("{\n  \"id\": %q,\n  \"method\": \"GET\",\n  \"url\": \"https://ex.test/legacy\",\n  \"headers\": {\n    \"Accept\": \"application/json\",\n    \"X-Custom-Token\": %q\n  },\n  \"auth\": \"gone\"\n}\n", id, secret)
-	if err := os.WriteFile(filepath.Join(sp.Requests, id+".json"), []byte(raw), 0o644); err != nil {
+	// Legacy unredacted artifacts: custom header on both request and response.
+	reqRaw := fmt.Sprintf("{\n  \"id\": %q,\n  \"method\": \"GET\",\n  \"url\": \"https://ex.test/legacy\",\n  \"headers\": {\n    \"Accept\": \"application/json\",\n    \"X-Custom-Token\": %q\n  },\n  \"auth\": \"gone\"\n}\n", id, secret)
+	respRaw := fmt.Sprintf("{\n  \"id\": %q,\n  \"status\": 200,\n  \"headers\": {\n    \"Content-Type\": \"application/json\",\n    \"X-Custom-Token\": %q\n  },\n  \"body\": \"{}\"\n}\n", id, secret)
+	if err := os.WriteFile(filepath.Join(sp.Requests, id+".json"), []byte(reqRaw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sp.Responses, id+".json"), []byte(respRaw), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	out.Reset()
@@ -268,6 +274,22 @@ func TestLastScrubsWhenAuthProfileMissing(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "[REDACTED]") {
 		t.Fatalf("expected redaction in last: %s", out.String())
+	}
+
+	out.Reset()
+	res = e.Run(ctx, []string{"promote", "demoapi", "--endpoint", "get-legacy", "--request", id, "--json"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("promote exit=%d data=%+v", res.ExitCode, res.Envelope)
+	}
+	fixture, err := os.ReadFile(filepath.Join(cat, "demoapi", "fixtures", "get-legacy.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(fixture), secret) {
+		t.Fatalf("secret leaked into promote fixture: %s", fixture)
+	}
+	if !strings.Contains(string(fixture), "[REDACTED]") {
+		t.Fatalf("expected redaction in promote fixture: %s", fixture)
 	}
 }
 
