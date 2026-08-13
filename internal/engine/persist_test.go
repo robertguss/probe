@@ -83,7 +83,7 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 		t.Fatalf("auth list exit=%d", res.ExitCode)
 	}
 
-	id, err := e2.persistExchange(sp, "courses", savedRequestFile{
+	id, err := e2.spikeStore(sp).Commit("courses", savedRequestFile{
 		Method:  "GET",
 		URL:     "https://ex.test/x?token=sekrit",
 		Headers: map[string]string{"Authorization": "Bearer super-secret-value", "Accept": "application/json"},
@@ -92,7 +92,7 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 		Status:  200,
 		Headers: map[string]string{"Set-Cookie": "sid=abc", "Content-Type": "application/json"},
 		Body:    `{"ok":true}`,
-	}, 12)
+	}, 12, policyForAuth(AuthProfile{Type: AuthBearer}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,16 +169,18 @@ func TestPersistRedactsExtraAuthHeader(t *testing.T) {
 		t.Fatalf("init exit=%d", res.ExitCode)
 	}
 	sp := spikePathsFor(filepath.Join(dir, ".probe"))
-	id, err := e.persistExchange(sp, "header", savedRequestFile{
+	const secret = "super-secret-custom-token-value"
+	policy := policyForAuth(AuthProfile{Type: AuthHeader, Header: "X-Custom-Token"})
+	id, err := e.spikeStore(sp).Commit("header", savedRequestFile{
 		Method:  "GET",
 		URL:     "https://ex.test/y",
-		Headers: map[string]string{"X-API-Key": "super-secret-apikey-value", "Accept": "application/json"},
+		Headers: map[string]string{"X-Custom-Token": secret, "Accept": "application/json"},
 		Auth:    "custom",
 	}, savedResponseFile{
 		Status:  200,
 		Headers: map[string]string{"Content-Type": "application/json"},
 		Body:    `{}`,
-	}, 3, "X-API-Key")
+	}, 3, policy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,10 +188,17 @@ func TestPersistRedactsExtraAuthHeader(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(headerBytes), "super-secret-apikey-value") {
+	if strings.Contains(string(headerBytes), secret) {
 		t.Fatalf("custom header secret in request artifact: %s", headerBytes)
 	}
 	if !strings.Contains(string(headerBytes), "[REDACTED]") {
 		t.Fatalf("expected custom header redaction: %s", headerBytes)
+	}
+	req, _, err := e.loadSavedExchange(sp, ByID(id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(req.Headers["X-Custom-Token"], secret) {
+		t.Fatalf("Load leaked custom auth header: %#v", req.Headers)
 	}
 }

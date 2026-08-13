@@ -56,33 +56,33 @@ func (e *Engine) loadAuthProfiles(sp SpikePaths) (map[string]AuthProfile, error)
 	return cfg.Auth, nil
 }
 
-func (e *Engine) materializeAuth(p AuthProfile) (AuthorizationHeader, string, error) {
+func (e *Engine) materializeAuth(p AuthProfile) (WireSecrets, string, error) {
 	switch p.Type {
 	case AuthBearer:
 		v, ok := e.environ[p.TokenEnv]
 		if !ok || v == "" {
-			return AuthorizationHeader{}, p.TokenEnv, fmt.Errorf("missing")
+			return WireSecrets{}, p.TokenEnv, fmt.Errorf("missing")
 		}
-		return newAuthorizationHeader("Bearer " + v), "Authorization", nil
+		return WireSecrets{headers: map[string]string{"Authorization": "Bearer " + v}}, "", nil
 	case AuthBasic:
 		user, okU := e.environ[p.UserEnv]
 		pass, okP := e.environ[p.PassEnv]
 		if !okU || user == "" {
-			return AuthorizationHeader{}, p.UserEnv, fmt.Errorf("missing")
+			return WireSecrets{}, p.UserEnv, fmt.Errorf("missing")
 		}
 		if !okP || pass == "" {
-			return AuthorizationHeader{}, p.PassEnv, fmt.Errorf("missing")
+			return WireSecrets{}, p.PassEnv, fmt.Errorf("missing")
 		}
 		raw := base64.StdEncoding.EncodeToString([]byte(user + ":" + pass))
-		return newAuthorizationHeader("Basic " + raw), "Authorization", nil
+		return WireSecrets{headers: map[string]string{"Authorization": "Basic " + raw}}, "", nil
 	case AuthHeader:
 		v, ok := e.environ[p.ValueEnv]
 		if !ok || v == "" {
-			return AuthorizationHeader{}, p.ValueEnv, fmt.Errorf("missing")
+			return WireSecrets{}, p.ValueEnv, fmt.Errorf("missing")
 		}
-		return newAuthorizationHeader(v), p.Header, nil
+		return WireSecrets{headers: map[string]string{p.Header: v}}, "", nil
 	default:
-		return AuthorizationHeader{}, "", fmt.Errorf("unknown auth type %q", p.Type)
+		return WireSecrets{}, "", fmt.Errorf("unknown auth type %q", p.Type)
 	}
 }
 

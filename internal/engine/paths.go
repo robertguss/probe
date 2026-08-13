@@ -1,9 +1,38 @@
 package engine
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 )
+
+var containNameRe = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
+
+// containPath joins root/name only when name is a single slug segment and the
+// result is a proper child of root (not root itself, not an escape).
+func containPath(root, name string) (string, error) {
+	name = strings.TrimSpace(name)
+	if name == "" || name == "." || name == ".." || filepath.IsAbs(name) {
+		return "", fmt.Errorf("invalid path name %q", name)
+	}
+	if strings.ContainsRune(name, '/') || strings.ContainsRune(name, '\\') {
+		return "", fmt.Errorf("invalid path name %q", name)
+	}
+	if !containNameRe.MatchString(name) {
+		return "", fmt.Errorf("invalid path name %q", name)
+	}
+	joined := filepath.Join(root, name)
+	rel, err := filepath.Rel(root, joined)
+	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("path escapes root")
+	}
+	if rel != name {
+		return "", fmt.Errorf("path escapes root")
+	}
+	return joined, nil
+}
 
 // SpikePaths is the on-disk layout under .probe/.
 type SpikePaths struct {
@@ -91,12 +120,15 @@ func (e *Engine) resolveCatalog() (CatalogPaths, error) {
 	return CatalogPaths{Root: filepath.Join(home, ".local", "share", "probe", "catalog")}, nil
 }
 
-func catalogAPI(cat CatalogPaths, api string) APIPaths {
-	root := filepath.Join(cat.Root, api)
+func catalogAPI(cat CatalogPaths, api string) (APIPaths, error) {
+	root, err := containPath(cat.Root, api)
+	if err != nil {
+		return APIPaths{}, err
+	}
 	return APIPaths{
 		Root:     root,
 		APIYAML:  filepath.Join(root, "api.yaml"),
 		Fixtures: filepath.Join(root, "fixtures"),
 		Notes:    filepath.Join(root, "notes.md"),
-	}
+	}, nil
 }

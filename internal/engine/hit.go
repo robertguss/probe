@@ -52,26 +52,27 @@ type hitData struct {
 }
 
 type hitPlan struct {
-	method     string
-	resolved   string
-	example    string
-	headers    map[string]string
-	body       []byte
-	authName   string
-	authHeader string
-	timeout    time.Duration
-	maxWait    time.Duration
-	maxBody    int64
-	retries    int
-	rps        float64
-	follow     bool
-	dryRun     bool
-	noSave     bool
-	noRetry    bool
-	save       string
-	fields     string
-	sp         SpikePaths
-	hasSpike   bool
+	method   string
+	resolved string
+	example  string
+	headers  map[string]string
+	secrets  WireSecrets
+	policy   RedactionPolicy
+	body     []byte
+	authName string
+	timeout  time.Duration
+	maxWait  time.Duration
+	maxBody  int64
+	retries  int
+	rps      float64
+	follow   bool
+	dryRun   bool
+	noSave   bool
+	noRetry  bool
+	save     string
+	fields   string
+	sp       SpikePaths
+	hasSpike bool
 }
 
 func (e *Engine) hit(ctx context.Context, in HitInput) Result {
@@ -79,8 +80,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 	if !ok {
 		return res
 	}
-	planHeaders := RedactHeaders(plan.headers, plan.authHeader)
-	planURL := RedactURL(plan.resolved)
+	planHeaders, planURL := plan.policy.redactForPersist(plan.secrets.namedHeaders(plan.headers), plan.resolved)
 	if plan.dryRun {
 		return e.ok("hit", hitData{
 			Method:  plan.method,
@@ -105,6 +105,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 	for k, v := range plan.headers {
 		req.Header.Set(k, v)
 	}
+	plan.secrets.apply(req)
 
 	client := e.httpClient(plan.timeout, plan.follow)
 	started := e.now()
@@ -126,7 +127,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 		reqFile := savedRequestFile{
 			Method:  plan.method,
 			URL:     plan.resolved,
-			Headers: plan.headers,
+			Headers: plan.secrets.namedHeaders(plan.headers),
 			Body:    string(plan.body),
 			Auth:    plan.authName,
 		}
@@ -136,7 +137,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 			Body:    string(bodyOut),
 		}
 		var persistErr error
-		id, persistErr = e.persistExchange(plan.sp, saveName, reqFile, respFile, dur.Milliseconds(), plan.authHeader)
+		id, persistErr = e.spikeStore(plan.sp).Commit(saveName, reqFile, respFile, dur.Milliseconds(), plan.policy)
 		if persistErr != nil {
 			return e.fail("hit", ExitTransport, "transport", persistErr.Error(), "", nil)
 		}
@@ -147,7 +148,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 		Method:     plan.method,
 		URL:        planURL,
 		Status:     out.Status,
-		Headers:    RedactHeaders(headerMap(out.Header)),
+		Headers:    plan.policy.redactHeaders(headerMap(out.Header)),
 		Body:       string(bodyOut),
 		Attempts:   out.Attempts,
 		DurationMS: dur.Milliseconds(),
@@ -195,6 +196,7 @@ func (e *Engine) planHit(in HitInput) (hitPlan, Result, bool) {
 	plan := hitPlan{
 		method:  method,
 		example: example,
+		policy:  NewRedactionPolicy(),
 		dryRun:  in.DryRun,
 		noSave:  in.NoSave,
 		noRetry: in.NoRetry,
@@ -295,14 +297,17 @@ func (e *Engine) planHit(in HitInput) (hitPlan, Result, bool) {
 		if !found {
 			return hitPlan{}, e.fail("hit", ExitUsage, "not_found", fmt.Sprintf("auth profile %q not found", in.Auth), "probe auth list --json", []string{"probe auth list --json"}), false
 		}
-		h, envName, err := e.materializeAuth(p)
+		secrets, envName, err := e.materializeAuth(p)
 		if err != nil {
 			ex := fmt.Sprintf("probe hit %s %s --auth %s --json", method, rawURL, in.Auth)
 			return hitPlan{}, e.authEnvMissing("hit", in.Auth, envName, ex), false
 		}
 		plan.authName = in.Auth
-		plan.authHeader = authHeaderNameOr(p)
-		headers[plan.authHeader] = h.materialize()
+		plan.secrets = secrets
+		plan.policy = policyForAuth(p)
+		for _, name := range secrets.names() {
+			deleteHeaderFold(headers, name)
+		}
 	}
 	plan.headers = headers
 	return plan, Result{}, true
@@ -317,11 +322,12 @@ func headerLookup(h map[string]string, name string) string {
 	return ""
 }
 
-func authHeaderNameOr(p AuthProfile) string {
-	if p.Type == AuthHeader && p.Header != "" {
-		return p.Header
+func deleteHeaderFold(h map[string]string, name string) {
+	for k := range h {
+		if strings.EqualFold(k, name) {
+			delete(h, k)
+		}
 	}
-	return "Authorization"
 }
 
 func resolveURL(raw, base string) (string, error) {
