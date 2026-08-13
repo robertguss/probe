@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -61,6 +60,17 @@ func TestRedactHeaders(t *testing.T) {
 				"Authorization": "[REDACTED]",
 			},
 		},
+		{
+			name: "denylist x-api-key",
+			in: map[string]string{
+				"X-API-Key": "super-secret-apikey-value",
+				"Accept":    "application/json",
+			},
+			want: map[string]string{
+				"X-API-Key": "[REDACTED]",
+				"Accept":    "application/json",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -69,7 +79,7 @@ func TestRedactHeaders(t *testing.T) {
 			if tt.in != nil {
 				orig = tt.in["Authorization"]
 			}
-			got := RedactHeaders(tt.in)
+			got, _ := NewRedactionPolicy().redactForPersist(tt.in, "")
 			if tt.want == nil {
 				if got != nil {
 					t.Fatalf("got %#v want nil", got)
@@ -96,23 +106,20 @@ func TestRedactHeaders(t *testing.T) {
 	}
 }
 
-func TestRedactHeadersExtraNames(t *testing.T) {
+func TestRedactionPolicyExtraNames(t *testing.T) {
 	in := map[string]string{
-		"X-API-Key": "super-secret-apikey-value",
-		"Accept":    "application/json",
+		"X-Custom-Token": "super-secret-apikey-value",
+		"Accept":         "application/json",
 	}
-	got := RedactHeaders(in, "X-API-Key")
-	if got["X-API-Key"] != redacted {
-		t.Fatalf("X-API-Key=%q want %q", got["X-API-Key"], redacted)
+	got, _ := NewRedactionPolicy("X-Custom-Token").redactForPersist(in, "")
+	if got["X-Custom-Token"] != redacted {
+		t.Fatalf("X-Custom-Token=%q want %q", got["X-Custom-Token"], redacted)
 	}
 	if got["Accept"] != "application/json" {
 		t.Fatalf("Accept mutated: %q", got["Accept"])
 	}
-	if in["X-API-Key"] != "super-secret-apikey-value" {
+	if in["X-Custom-Token"] != "super-secret-apikey-value" {
 		t.Fatal("input mutated")
-	}
-	if strings.Contains(got["X-API-Key"], "super-secret-apikey-value") {
-		t.Fatal("secret leaked")
 	}
 }
 
@@ -154,39 +161,38 @@ func TestRedactURL(t *testing.T) {
 			in:   "://bad",
 			want: "://bad",
 		},
+		{
+			name: "userinfo stripped",
+			in:   "https://user:pass@host.example/path",
+			want: "https://host.example/path",
+		},
+		{
+			name: "userinfo and token query",
+			in:   "https://user:pass@host.example/x?token=sekrit",
+			want: "https://host.example/x?token=%5BREDACTED%5D",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := RedactURL(tt.in)
+			_, got := NewRedactionPolicy().redactForPersist(nil, tt.in)
 			if got != tt.want {
 				t.Fatalf("got %q want %q", got, tt.want)
 			}
-			if strings.Contains(got, "sekrit") || strings.Contains(got, "zzz") && !strings.Contains(got, "[REDACTED]") {
-				if strings.Contains(got, "sekrit") || strings.Contains(got, "=zzz") {
-					t.Fatalf("secret leaked: %q", got)
-				}
+			if strings.Contains(got, "sekrit") || strings.Contains(got, "user:pass") || strings.Contains(got, "=zzz") {
+				t.Fatalf("secret leaked: %q", got)
 			}
 		})
 	}
 }
 
-func TestAuthorizationHeaderNeverPrintsSecret(t *testing.T) {
-	h := newAuthorizationHeader("Bearer super-secret")
-	if s := h.String(); s != "[REDACTED]" {
-		t.Fatalf("String=%q", s)
+func TestWireSecretsApplyOnly(t *testing.T) {
+	w := WireSecrets{headers: map[string]string{"Authorization": "Bearer super-secret"}}
+	overlay := w.overlayNames(map[string]string{"Accept": "application/json"})
+	if overlay["Authorization"] != redacted {
+		t.Fatalf("overlay Authorization=%q", overlay["Authorization"])
 	}
-	b, err := json.Marshal(h)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(b) != `"[REDACTED]"` {
-		t.Fatalf("JSON=%s", b)
-	}
-	if strings.Contains(string(b), "super-secret") {
-		t.Fatal("secret in JSON")
-	}
-	if h.materialize() != "Bearer super-secret" {
-		t.Fatal("materialize broken")
+	if strings.Contains(overlay["Authorization"], "super-secret") {
+		t.Fatal("secret in overlay")
 	}
 }

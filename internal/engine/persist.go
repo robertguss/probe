@@ -146,7 +146,7 @@ func exchangeID(n int, name string) string {
 	return fmt.Sprintf("%03d-%s", n, sanitizeSaveName(name))
 }
 
-func (e *Engine) persistExchange(sp SpikePaths, name string, req savedRequestFile, resp savedResponseFile, durationMS int64, redactExtra ...string) (string, error) {
+func (e *Engine) persistExchange(sp SpikePaths, name string, req savedRequestFile, resp savedResponseFile, durationMS int64, policy RedactionPolicy) (string, error) {
 	sess, err := e.loadSession(sp)
 	if err != nil {
 		return "", err
@@ -158,9 +158,8 @@ func (e *Engine) persistExchange(sp SpikePaths, name string, req savedRequestFil
 	id := exchangeID(n, name)
 	req.ID = id
 	resp.ID = id
-	req.URL = RedactURL(req.URL)
-	req.Headers = RedactHeaders(req.Headers, redactExtra...)
-	resp.Headers = RedactHeaders(resp.Headers)
+	req.Headers, req.URL = policy.redactForPersist(req.Headers, req.URL)
+	resp.Headers, _ = policy.redactForPersist(resp.Headers, "")
 
 	rb, err := json.MarshalIndent(req, "", "  ")
 	if err != nil {
@@ -327,8 +326,16 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 		MaxBody: defaultMaxBody,
 		Follow:  strings.EqualFold(req.Method, "GET"),
 	}
+	policy := NewRedactionPolicy()
+	if req.Auth != "" {
+		if profiles, err := e.loadAuthProfiles(sp); err == nil {
+			if p, ok := profiles[req.Auth]; ok {
+				policy = policyForAuth(p)
+			}
+		}
+	}
 	for k, v := range req.Headers {
-		if secretHeaderName(k, v) {
+		if v == redacted || policy.covers(k) || secretHeaderName(k, v) {
 			continue
 		}
 		in.Headers = append(in.Headers, k+":"+v)

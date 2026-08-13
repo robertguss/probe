@@ -92,7 +92,7 @@ func TestInitAuthPersistRoundTrip(t *testing.T) {
 		Status:  200,
 		Headers: map[string]string{"Set-Cookie": "sid=abc", "Content-Type": "application/json"},
 		Body:    `{"ok":true}`,
-	}, 12)
+	}, 12, policyForAuth(AuthProfile{Type: AuthBearer}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func TestPersistRedactsExtraAuthHeader(t *testing.T) {
 		Status:  200,
 		Headers: map[string]string{"Content-Type": "application/json"},
 		Body:    `{}`,
-	}, 3, "X-API-Key")
+	}, 3, NewRedactionPolicy())
 	if err != nil {
 		t.Fatal(err)
 	}
