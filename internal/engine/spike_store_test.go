@@ -3,6 +3,7 @@ package engine
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -71,8 +72,8 @@ func TestSpikeStoreLoadRejectsTraversal(t *testing.T) {
 		t.Fatalf("init exit=%d", res.ExitCode)
 	}
 	store := e.spikeStore(spikePathsFor(spike))
-	for _, id := range []string{"../escape", "/etc/passwd", "..", "foo/../bar"} {
-		_, _, err := store.Load(ByID(id), NewRedactionPolicy())
+	for _, id := range []string{"../escape", "/etc/passwd", "..", ".", "foo/../bar"} {
+		_, _, err := store.Load(ByID(id))
 		if err == nil {
 			t.Fatalf("Load(%q) expected error", id)
 		}
@@ -156,7 +157,7 @@ func TestCatalogShowPathRejectTraversal(t *testing.T) {
 	var out bytes.Buffer
 	e := New(Options{Stdout: &out, CatalogDir: cat, JSONDefault: true})
 	ctx := context.Background()
-	for _, name := range []string{"../escape", "/tmp/x"} {
+	for _, name := range []string{"../escape", "/tmp/x", "."} {
 		res := e.Run(ctx, []string{"catalog", "show", name, "--json"})
 		if res.ExitCode == ExitSuccess {
 			t.Fatalf("catalog show %q succeeded", name)
@@ -177,10 +178,96 @@ func TestContainPath(t *testing.T) {
 	if got != filepath.Join(root, "001-ok.json") {
 		t.Fatalf("got %q", got)
 	}
-	for _, name := range []string{"../x", "/abs", "a/b", "..", ""} {
+	if _, err := containPath(root, "foo..bar.json"); err != nil {
+		t.Fatalf("foo..bar.json should be allowed: %v", err)
+	}
+	for _, name := range []string{"../x", "/abs", "a/b", "..", ".", ""} {
 		if _, err := containPath(root, name); err == nil {
 			t.Fatalf("containPath(%q) expected error", name)
 		}
+	}
+}
+
+func TestHitSaveNameWithDoubleDot(t *testing.T) {
+	rt := roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{}`)),
+			Request:    r,
+		}, nil
+	})
+	dir := t.TempDir()
+	spike := filepath.Join(dir, ".probe")
+	var out, errBuf bytes.Buffer
+	e := New(Options{
+		Stdout:   &out,
+		Stderr:   &errBuf,
+		HTTP:     rt,
+		Getwd:    func() (string, error) { return dir, nil },
+		SpikeDir: spike,
+	})
+	ctx := context.Background()
+	if res := e.Run(ctx, []string{"init", "--json"}); res.ExitCode != ExitSuccess {
+		t.Fatalf("init: %d", res.ExitCode)
+	}
+	out.Reset()
+	res := e.Run(ctx, []string{"hit", "GET", "https://example.test/z", "--save", "foo..bar", "--json"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("hit --save foo..bar exit=%d %s", res.ExitCode, errBuf.String())
+	}
+	id := res.Envelope.Meta.RequestID
+	if id == "" || !strings.Contains(id, "foo..bar") {
+		t.Fatalf("id=%q want foo..bar", id)
+	}
+	if _, err := os.Stat(filepath.Join(spike, "requests", id+".json")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLastScrubsWhenAuthProfileMissing(t *testing.T) {
+	const secret = "legacy-custom-secret-value"
+	dir := t.TempDir()
+	spike := filepath.Join(dir, ".probe")
+	var out bytes.Buffer
+	e := New(Options{
+		Stdout:   &out,
+		Getwd:    func() (string, error) { return dir, nil },
+		SpikeDir: spike,
+	})
+	ctx := context.Background()
+	if res := e.Run(ctx, []string{"init", "--json"}); res.ExitCode != ExitSuccess {
+		t.Fatalf("init: %d", res.ExitCode)
+	}
+	sp := spikePathsFor(spike)
+	id, err := e.spikeStore(sp).Commit("legacy", savedRequestFile{
+		Method:  "GET",
+		URL:     "https://ex.test/legacy",
+		Headers: map[string]string{"X-Custom-Token": secret, "Accept": "application/json"},
+		Auth:    "gone",
+	}, savedResponseFile{
+		Status:  200,
+		Headers: map[string]string{"Content-Type": "application/json"},
+		Body:    `{}`,
+	}, 1, NewRedactionPolicy())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Simulate a legacy unredacted artifact: rewrite request with raw secret after Commit.
+	raw := fmt.Sprintf("{\n  \"id\": %q,\n  \"method\": \"GET\",\n  \"url\": \"https://ex.test/legacy\",\n  \"headers\": {\n    \"Accept\": \"application/json\",\n    \"X-Custom-Token\": %q\n  },\n  \"auth\": \"gone\"\n}\n", id, secret)
+	if err := os.WriteFile(filepath.Join(sp.Requests, id+".json"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	res := e.Run(ctx, []string{"last", "--json"})
+	if res.ExitCode != ExitSuccess {
+		t.Fatalf("last exit=%d", res.ExitCode)
+	}
+	if strings.Contains(out.String(), secret) {
+		t.Fatalf("secret leaked via last after profile delete: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "[REDACTED]") {
+		t.Fatalf("expected redaction in last: %s", out.String())
 	}
 }
 

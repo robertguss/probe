@@ -225,27 +225,9 @@ func (e *Engine) promote(_ context.Context, in promoteInput) Result {
 	} else {
 		req, resp, err = e.loadSavedExchange(sp, ByID(reqID))
 		if err != nil {
-			if os.IsNotExist(err) {
-				return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("request %q not found", reqID), "probe last --json", nil)
-			}
 			return e.fail("promote", ExitUsage, "not_found", fmt.Sprintf("request %q not found", reqID), "probe last --json", nil)
 		}
 		reqID = req.ID
-	}
-	if req.Auth != "" {
-		profiles, perr := e.loadAuthProfiles(sp)
-		if perr != nil {
-			return e.fail("promote", ExitTransport, "transport", perr.Error(), "", nil)
-		}
-		p, ok := profiles[req.Auth]
-		if !ok {
-			return e.fail("promote", ExitUsage, "not_found",
-				fmt.Sprintf("auth profile %q not found for saved request", req.Auth),
-				"probe auth list --json", []string{"probe auth list --json"})
-		}
-		pol := policyForAuth(p)
-		req.Headers, req.URL = pol.redactForPersist(req.Headers, req.URL)
-		resp.Headers, _ = pol.redactForPersist(resp.Headers, "")
 	}
 
 	u, err := url.Parse(req.URL)

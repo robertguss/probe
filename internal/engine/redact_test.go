@@ -192,9 +192,10 @@ func TestRedactURL(t *testing.T) {
 func TestWireSecretsApplyOnly(t *testing.T) {
 	const secret = "Bearer super-secret"
 	w := WireSecrets{headers: map[string]string{"Authorization": secret}}
-	overlay := w.overlayNames(map[string]string{"Accept": "application/json"})
-	if overlay["Authorization"] != redacted {
-		t.Fatalf("overlay Authorization=%q", overlay["Authorization"])
+	named := w.namedHeaders(map[string]string{"Accept": "application/json"})
+	scrubbed, _ := NewRedactionPolicy("Authorization").redactForPersist(named, "")
+	if scrubbed["Authorization"] != redacted {
+		t.Fatalf("Authorization=%q", scrubbed["Authorization"])
 	}
 	if strings.Contains(fmt.Sprintf("%v", w), "super-secret") || strings.Contains(fmt.Sprintf("%#v", w), "super-secret") {
 		t.Fatal("WireSecrets fmt leaked secret")

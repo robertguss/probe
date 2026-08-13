@@ -55,7 +55,9 @@ func (w WireSecrets) names() []string {
 	return out
 }
 
-func (w WireSecrets) overlayNames(h map[string]string) map[string]string {
+// namedHeaders returns a copy of h with WireSecrets header names present so a
+// single redactForPersist pass can scrub them for dry-run/persist.
+func (w WireSecrets) namedHeaders(h map[string]string) map[string]string {
 	out := copyHeaders(h)
 	if out == nil {
 		out = map[string]string{}
@@ -64,14 +66,24 @@ func (w WireSecrets) overlayNames(h map[string]string) map[string]string {
 		found := false
 		for ek := range out {
 			if strings.EqualFold(ek, k) {
-				out[ek] = redacted
 				found = true
 				break
 			}
 		}
 		if !found {
-			out[k] = redacted
+			out[k] = ""
 		}
+	}
+	return out
+}
+
+func scrubAllHeaders(h map[string]string) map[string]string {
+	if h == nil {
+		return nil
+	}
+	out := make(map[string]string, len(h))
+	for k := range h {
+		out[k] = redacted
 	}
 	return out
 }
@@ -172,14 +184,4 @@ func redactURL(raw string) string {
 		return raw
 	}
 	return u.String()
-}
-
-// RedactHeaders is a thin wrapper over RedactionPolicy for callers that only need header scrubbing.
-func RedactHeaders(h map[string]string, extra ...string) map[string]string {
-	return NewRedactionPolicy(extra...).redactHeaders(h)
-}
-
-// RedactURL redacts userinfo and obvious token query parameter values.
-func RedactURL(raw string) string {
-	return redactURL(raw)
 }

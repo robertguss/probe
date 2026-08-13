@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -206,8 +207,14 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 	}
 	req, _, err := e.loadSavedExchange(sp, ByID(id))
 	if err != nil {
+		if errors.Is(err, errAmbiguousHint) {
+			return e.fail("replay", ExitUsage, "ambiguous", err.Error(), "probe find "+id+" --json", []string{"probe find " + id + " --json"})
+		}
 		req, _, err = e.loadSavedExchange(sp, Hint(id))
 		if err != nil {
+			if errors.Is(err, errAmbiguousHint) {
+				return e.fail("replay", ExitUsage, "ambiguous", err.Error(), "probe find "+id+" --json", []string{"probe find " + id + " --json"})
+			}
 			return e.fail("replay", ExitUsage, "not_found", fmt.Sprintf("request %q not found", id), "probe last --json", []string{"probe last --json"})
 		}
 	}
@@ -223,9 +230,8 @@ func (e *Engine) replay(ctx context.Context, id string) Result {
 		MaxBody: defaultMaxBody,
 		Follow:  strings.EqualFold(req.Method, "GET"),
 	}
-	policy := e.policyForSavedAuth(sp, req.Auth)
 	for k, v := range req.Headers {
-		if v == redacted || policy.covers(k) || secretHeaderName(k, v) {
+		if v == redacted || secretHeaderName(k, v) {
 			continue
 		}
 		in.Headers = append(in.Headers, k+":"+v)
@@ -266,29 +272,34 @@ func (e *Engine) lastExchange(_ context.Context) Result {
 	return out
 }
 
-func (e *Engine) policyForSavedAuth(sp SpikePaths, authName string) RedactionPolicy {
-	authName = strings.TrimSpace(authName)
-	if authName == "" {
-		return NewRedactionPolicy()
-	}
-	profiles, err := e.loadAuthProfiles(sp)
-	if err != nil {
-		return NewRedactionPolicy()
-	}
-	if p, ok := profiles[authName]; ok {
-		return policyForAuth(p)
-	}
-	return NewRedactionPolicy()
-}
-
 func (e *Engine) loadSavedExchange(sp SpikePaths, q Query) (savedRequestFile, savedResponseFile, error) {
-	store := e.spikeStore(sp)
-	req, resp, err := store.Load(q, NewRedactionPolicy())
+	req, resp, err := e.spikeStore(sp).Load(q)
 	if err != nil {
 		return req, resp, err
 	}
-	policy := e.policyForSavedAuth(sp, req.Auth)
-	req.Headers, req.URL = policy.redactForPersist(req.Headers, req.URL)
-	resp.Headers, _ = policy.redactForPersist(resp.Headers, "")
+	authName := strings.TrimSpace(req.Auth)
+	if authName == "" {
+		pol := NewRedactionPolicy()
+		req.Headers, req.URL = pol.redactForPersist(req.Headers, req.URL)
+		resp.Headers, _ = pol.redactForPersist(resp.Headers, "")
+		return req, resp, nil
+	}
+	profiles, err := e.loadAuthProfiles(sp)
+	if err != nil {
+		req.Headers = scrubAllHeaders(req.Headers)
+		req.URL = redactURL(req.URL)
+		resp.Headers, _ = NewRedactionPolicy().redactForPersist(resp.Headers, "")
+		return req, resp, nil
+	}
+	p, ok := profiles[authName]
+	if !ok {
+		req.Headers = scrubAllHeaders(req.Headers)
+		req.URL = redactURL(req.URL)
+		resp.Headers, _ = NewRedactionPolicy().redactForPersist(resp.Headers, "")
+		return req, resp, nil
+	}
+	pol := policyForAuth(p)
+	req.Headers, req.URL = pol.redactForPersist(req.Headers, req.URL)
+	resp.Headers, _ = pol.redactForPersist(resp.Headers, "")
 	return req, resp, nil
 }

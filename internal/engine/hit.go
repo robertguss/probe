@@ -80,7 +80,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 	if !ok {
 		return res
 	}
-	planHeaders, planURL := plan.policy.redactForPersist(plan.secrets.overlayNames(plan.headers), plan.resolved)
+	planHeaders, planURL := plan.policy.redactForPersist(plan.secrets.namedHeaders(plan.headers), plan.resolved)
 	if plan.dryRun {
 		return e.ok("hit", hitData{
 			Method:  plan.method,
@@ -127,7 +127,7 @@ func (e *Engine) hit(ctx context.Context, in HitInput) Result {
 		reqFile := savedRequestFile{
 			Method:  plan.method,
 			URL:     plan.resolved,
-			Headers: plan.secrets.overlayNames(plan.headers),
+			Headers: plan.secrets.namedHeaders(plan.headers),
 			Body:    string(plan.body),
 			Auth:    plan.authName,
 		}

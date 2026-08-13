@@ -2,15 +2,12 @@ package engine
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 )
-
-var containNameRe = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 
 // SpikeStore owns spike request/response IO under .probe/.
 type SpikeStore struct {
@@ -43,21 +40,7 @@ func LastQuery() Query { return Query{kind: queryLast} }
 
 func Hint(hint string) Query { return Query{kind: queryHint, hint: hint} }
 
-func containPath(root, name string) (string, error) {
-	name = strings.TrimSpace(name)
-	if name == "" || filepath.IsAbs(name) || !containNameRe.MatchString(name) {
-		return "", fmt.Errorf("invalid path name %q", name)
-	}
-	if strings.Contains(name, "..") {
-		return "", fmt.Errorf("invalid path name %q", name)
-	}
-	joined := filepath.Join(root, name)
-	rel, err := filepath.Rel(root, joined)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-		return "", fmt.Errorf("path escapes root")
-	}
-	return joined, nil
-}
+var errAmbiguousHint = errors.New("ambiguous hint")
 
 func (s SpikeStore) Commit(name string, req savedRequestFile, resp savedResponseFile, durationMS int64, policy RedactionPolicy) (string, error) {
 	sess, err := s.e.loadSession(s.sp)
@@ -105,6 +88,14 @@ func (s SpikeStore) Commit(name string, req savedRequestFile, resp savedResponse
 		return "", err
 	}
 
+	sess.LastID = id
+	sess.NextID = n + 1
+	if err := s.e.saveSession(s.sp, sess); err != nil {
+		rollback()
+		return "", err
+	}
+
+	// Best-effort audit log after the session commit succeeds.
 	entry := logEntry{
 		ID:         id,
 		Method:     req.Method,
@@ -113,33 +104,16 @@ func (s SpikeStore) Commit(name string, req savedRequestFile, resp savedResponse
 		DurationMS: durationMS,
 		At:         s.e.now().UTC().Format(time.RFC3339Nano),
 	}
-	lb, err := json.Marshal(entry)
-	if err != nil {
-		rollback()
-		return "", err
-	}
-	f, err := os.OpenFile(s.sp.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		rollback()
-		return "", err
-	}
-	_, werr := f.Write(append(lb, '\n'))
-	_ = f.Close()
-	if werr != nil {
-		rollback()
-		return "", werr
-	}
-
-	sess.LastID = id
-	sess.NextID = n + 1
-	if err := s.e.saveSession(s.sp, sess); err != nil {
-		rollback()
-		return "", err
+	if lb, err := json.Marshal(entry); err == nil {
+		if f, err := os.OpenFile(s.sp.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err == nil {
+			_, _ = f.Write(append(lb, '\n'))
+			_ = f.Close()
+		}
 	}
 	return id, nil
 }
 
-func (s SpikeStore) Load(q Query, policy RedactionPolicy) (savedRequestFile, savedResponseFile, error) {
+func (s SpikeStore) Load(q Query) (savedRequestFile, savedResponseFile, error) {
 	var req savedRequestFile
 	var resp savedResponseFile
 	var id string
@@ -164,10 +138,10 @@ func (s SpikeStore) Load(q Query, policy RedactionPolicy) (savedRequestFile, sav
 	default:
 		return req, resp, fmt.Errorf("unknown query")
 	}
-	return s.loadID(id, policy)
+	return s.loadID(id)
 }
 
-func (s SpikeStore) loadID(id string, policy RedactionPolicy) (savedRequestFile, savedResponseFile, error) {
+func (s SpikeStore) loadID(id string) (savedRequestFile, savedResponseFile, error) {
 	var req savedRequestFile
 	var resp savedResponseFile
 	reqPath, err := containPath(s.sp.Requests, id+".json")
@@ -192,8 +166,6 @@ func (s SpikeStore) loadID(id string, policy RedactionPolicy) (savedRequestFile,
 	if err := json.Unmarshal(sb, &resp); err != nil {
 		return req, resp, err
 	}
-	req.Headers, req.URL = policy.redactForPersist(req.Headers, req.URL)
-	resp.Headers, _ = policy.redactForPersist(resp.Headers, "")
 	return req, resp, nil
 }
 
@@ -206,7 +178,7 @@ func (s SpikeStore) resolveHint(hint string) (string, error) {
 		return "", os.ErrNotExist
 	}
 	if len(matches) > 1 {
-		return "", fmt.Errorf("ambiguous hint %q (%d matches)", hint, len(matches))
+		return "", fmt.Errorf("%w %q (%d matches)", errAmbiguousHint, hint, len(matches))
 	}
 	return matches[0].ID, nil
 }
